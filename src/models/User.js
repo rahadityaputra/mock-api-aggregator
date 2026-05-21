@@ -1,17 +1,7 @@
-/**
- * User.js
- * In-memory user store and User model factory.
- */
-
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 
-// ─── In-Memory Store ──────────────────────────────────────────────────────────
-
 export const users = [];
-
-// ─── Seed Default Test User ───────────────────────────────────────────────────
-// Pre-hashed password: "password123"
 const seedPassword = bcrypt.hashSync('password123', 10);
 
 users.push({
@@ -23,8 +13,6 @@ users.push({
   role: 'seller',
   createdAt: new Date().toISOString(),
 });
-
-// ─── Model Factory ────────────────────────────────────────────────────────────
 
 /**
  * Creates a new User object with a hashed password.

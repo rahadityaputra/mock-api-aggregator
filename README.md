@@ -1,10 +1,10 @@
-# 🛒 Mock Marketplace API
+# Mock e-commerce API
 
-A production-ready mock backend API that simulates **Shopee**, **Tokopedia**, and **Lazada** e-commerce marketplace APIs. Built with Express.js using in-memory storage — no database required.
+Mock API untuk shopee, tokped, lazada.
 
 ---
 
-## 🚀 Quick Start
+## Step Instalasi
 
 ### 1. Install dependencies
 
@@ -12,30 +12,24 @@ A production-ready mock backend API that simulates **Shopee**, **Tokopedia**, an
 npm install
 ```
 
-### 2. Configure environment
+### 2. Config env
 
 ```bash
-# Copy the example env and edit as needed
 copy .env .env.local
 ```
-
-Default `.env` values work out of the box for local development.
 
 ### 3. Start the server
 
 ```bash
-# Development (with file-watch auto-restart)
 npm run dev
-
-# Production
 npm start
 ```
 
-The API starts at: **`http://localhost:4000/api`**
+API berjalan di port 4000: **`http://localhost:4000/api`**
 
 ---
 
-## 🔑 Pre-seeded Test Account
+## Seed Account
 
 | Field    | Value            |
 |----------|------------------|
@@ -43,19 +37,15 @@ The API starts at: **`http://localhost:4000/api`**
 | Password | `password123`    |
 | Username | `testuser`       |
 
-Use the login endpoint to get a JWT, then pass it as `Authorization: Bearer <token>` on protected routes.
-
 ---
 
-## 🏪 Marketplace Field Differences
+## Perbedaan Antar e-commerce
 
-Each marketplace uses different field names — this is intentional:
-
-| Concept      | Shopee         | Tokopedia     | Lazada        |
+| Nama Field   | Shopee         | Tokopedia     | Lazada        |
 |--------------|----------------|---------------|---------------|
 | Product ID   | `item_id`      | `product_id`  | `id`          |
 | SKU          | `model_sku`    | `sku`         | `seller_sku`  |
-| Product Name | `item_name`    | `name`        | `name`        |
+| Nama Produk  | `item_name`    | `name`        | `name`        |
 | Stock        | `stock`        | `stock`       | `available`   |
 | Category     | `category`     | `category`    | `primary_category` |
 | Rating       | `item_rating`  | `rating`      | `rating_score`|
@@ -63,7 +53,7 @@ Each marketplace uses different field names — this is intentional:
 
 ---
 
-## 📋 API Reference
+## API Reference
 
 ### Base URL
 ```
@@ -72,7 +62,7 @@ http://localhost:4000/api
 
 ---
 
-### 🩺 Health Check
+### Health Check
 
 #### `GET /health`
 ```bash
@@ -81,7 +71,7 @@ curl http://localhost:4000/health
 
 ---
 
-### 🔐 Authentication
+### Auth
 
 #### `POST /api/auth/register`
 ```bash
@@ -116,44 +106,39 @@ curl http://localhost:4000/api/auth/me \
 
 ---
 
-### 📦 Products
+### Produk
 
 #### `GET /api/:marketplace/products`
 List products with optional filters.
 
 ```bash
-# Shopee products
 curl "http://localhost:4000/api/shopee/products"
-
-# With filters
 curl "http://localhost:4000/api/tokopedia/products?category=Electronics&page=1&limit=5"
 curl "http://localhost:4000/api/lazada/products?search=earbuds&minPrice=100000&maxPrice=500000"
 ```
 
 Query Parameters:
-| Param      | Type   | Description                         |
+| Param      | Tipe   | Deskripsi                           |
 |------------|--------|-------------------------------------|
-| `page`     | number | Page number (default: 1)            |
-| `limit`    | number | Items per page (default: 20, max: 100) |
-| `category` | string | Filter by category (exact match)    |
-| `search`   | string | Search in product name and SKU      |
+| `page`     | number | Halaman (default: 1)            |
+| `limit`    | number | Jumlah data per halaman (default: 20, max: 100) |
+| `category` | string | Filter berdasarkan kategori    |
+| `search`   | string | Pencarian di nama produk dan SKU      |
 | `minPrice` | number | Minimum price filter                |
 | `maxPrice` | number | Maximum price filter                |
 
 #### `GET /api/:marketplace/products/:id`
-Get a single product by its marketplace-native ID.
 
 ```bash
-# Get the product ID from the list endpoint first
 curl "http://localhost:4000/api/shopee/products/PRODUCT_ITEM_ID"
 ```
 
 ---
 
-### 🛍️ Orders (Authentication Required)
+### Orders
 
 #### `POST /api/:marketplace/orders`
-Create an order. Validates stock, saves the order, decrements stock, and fires a webhook.
+Buat order, validasi stock, simpan data order, pengurangan stock, dan trigger webhook.
 
 ```bash
 curl -X POST http://localhost:4000/api/shopee/orders \
@@ -172,7 +157,6 @@ curl -X POST http://localhost:4000/api/shopee/orders \
 ```
 
 #### `GET /api/:marketplace/orders`
-List authenticated user's orders.
 
 ```bash
 curl "http://localhost:4000/api/shopee/orders?page=1&limit=10&status=confirmed" \
@@ -189,10 +173,9 @@ curl "http://localhost:4000/api/shopee/orders/ORDER_UUID" \
 
 ---
 
-### 📊 Stock Management (Authentication Required)
+### Stock Management 
 
 #### `PUT /api/:marketplace/stock/:sku`
-Update stock for a single SKU.
 
 ```bash
 curl -X PUT http://localhost:4000/api/shopee/stock/SHP-ELEC-001 \
@@ -202,7 +185,6 @@ curl -X PUT http://localhost:4000/api/shopee/stock/SHP-ELEC-001 \
 ```
 
 #### `PUT /api/:marketplace/stock/bulk`
-Bulk update stock for multiple SKUs (max 100 per request). Partial success is supported.
 
 ```bash
 curl -X PUT http://localhost:4000/api/tokopedia/stock/bulk \
@@ -219,10 +201,9 @@ curl -X PUT http://localhost:4000/api/tokopedia/stock/bulk \
 
 ---
 
-### 🔔 Webhook System (Authentication Required)
+### Webhook System
 
 #### `POST /api/:marketplace/webhook/config`
-Configure the aggregator webhook URL.
 
 ```bash
 curl -X POST http://localhost:4000/api/shopee/webhook/config \
@@ -237,7 +218,6 @@ curl -X POST http://localhost:4000/api/shopee/webhook/config \
 ```
 
 #### `POST /api/:marketplace/webhook/test`
-Send a test webhook to verify the configured URL.
 
 ```bash
 curl -X POST http://localhost:4000/api/shopee/webhook/test \
@@ -268,32 +248,31 @@ curl -X POST http://localhost:4000/api/shopee/webhook/test \
 
 ---
 
-### ⚙️ Marketplace Operations
+### E-Commerce Operation
 
 #### `GET /api/:marketplace/status`
-Get current status, product/order counts, and webhook config.
+status, jumlah product/order , dan config webhook.
 
 ```bash
 curl http://localhost:4000/api/shopee/status
 ```
 
 #### `POST /api/:marketplace/reset`
-Reset all marketplace data (stock, orders) to initial seed state.
+Reset data dari e-commerce. 
 
 ```bash
 curl -X POST http://localhost:4000/api/shopee/reset
 ```
 
 #### `POST /api/:marketplace/simulate-error`
-Simulate marketplace errors for testing aggregator resilience.
+Simulasi error.
 
 ```bash
-# Simulate rate limiting
 curl -X POST http://localhost:4000/api/shopee/simulate-error \
   -H "Content-Type: application/json" \
   -d '{"mode": "rate_limit"}'
 
-# Available modes:
+# Mode yang tersedia:
 # "none"         — Normal operation (default)
 # "rate_limit"   — Returns 429 Too Many Requests
 # "timeout"      — Returns 503 Service Unavailable
@@ -308,7 +287,7 @@ curl -X POST http://localhost:4000/api/shopee/simulate-error \
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 project-root/
@@ -350,72 +329,3 @@ project-root/
 ```
 
 ---
-
-## 🧪 Testing with Postman
-
-1. **Import Collection**: Create a new collection in Postman
-2. **Set base URL**: `http://localhost:4000/api`
-3. **Login first**: Call `POST /api/auth/login` and copy the `token` from the response
-4. **Set Bearer token**: In the Collection's Authorization tab, set `Bearer Token` = your token
-5. **Get a product ID**: Call `GET /api/shopee/products` and copy an `item_id`
-6. **Create an order**: Call `POST /api/shopee/orders` with the product ID
-
----
-
-## 🌱 Environment Variables
-
-| Variable            | Default                          | Description                          |
-|---------------------|----------------------------------|--------------------------------------|
-| `PORT`              | `4000`                           | HTTP server port                     |
-| `NODE_ENV`          | `development`                    | Environment mode                     |
-| `JWT_SECRET`        | *(see .env)*                     | Secret key for JWT signing           |
-| `JWT_EXPIRES_IN`    | `7d`                             | JWT token expiry duration            |
-| `DEFAULT_WEBHOOK_URL` | `http://localhost:3000/api/webhook` | Default aggregator webhook URL |
-| `WEBHOOK_TIMEOUT_MS`| `5000`                           | Webhook delivery timeout in ms       |
-
----
-
-## 🔒 Authentication Flow
-
-```
-Client                    API
-  │                        │
-  │  POST /auth/login      │
-  │──────────────────────▶│
-  │                        │  Verify email + password
-  │  { token: "eyJ..." }  │
-  │◀──────────────────────│
-  │                        │
-  │  GET /shopee/products  │
-  │  Authorization: Bearer │
-  │──────────────────────▶│
-  │                        │  Verify JWT → attach req.user
-  │  { products: [...] }  │
-  │◀──────────────────────│
-```
-
----
-
-## ⚡ Order Flow with Webhook
-
-```
-Client                    API                    Aggregator
-  │                        │                          │
-  │  POST /shopee/orders   │                          │
-  │──────────────────────▶│                          │
-  │                        │ 1. Validate auth         │
-  │                        │ 2. Find product          │
-  │                        │ 3. Check stock           │
-  │                        │ 4. Create order record   │
-  │                        │ 5. Decrement stock       │
-  │  { order: {...} }     │                          │
-  │◀──────────────────────│                          │
-  │                        │ 6. POST webhook ────────▶│
-  │                        │    (fire & forget)       │
-```
-
----
-
-## 📄 License
-
-ISC

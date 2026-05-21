@@ -1,8 +1,3 @@
-/**
- * orderController.js
- * HTTP handlers for order creation and retrieval.
- */
-
 import * as orderService from '../services/orderService.js';
 import { sendSuccess, sendCreated, sendPaginated } from '../utils/responses.js';
 import { checkSimulatedError } from './productController.js';
@@ -25,7 +20,7 @@ export const createOrder = (req, res, next) => {
     return sendCreated(
       res,
       { order },
-      `Order created successfully on ${marketplace}`
+      `Order berhasil dibuat di ${marketplace}`
     );
   } catch (err) {
     next(err);
@@ -54,7 +49,7 @@ export const listOrders = (req, res, next) => {
       total,
       page,
       limit,
-      `Orders retrieved from ${marketplace}`
+      `Pesanan diambil dari ${marketplace}`
     );
   } catch (err) {
     next(err);
@@ -71,7 +66,7 @@ export const getOrder = (req, res, next) => {
 
     const order = orderService.getOrderById(marketplace, req.user.id, id);
 
-    return sendSuccess(res, { order }, `Order retrieved from ${marketplace}`);
+    return sendSuccess(res, { order }, `Pesanan diambil dari${marketplace}`);
   } catch (err) {
     next(err);
   }

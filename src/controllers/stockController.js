@@ -1,9 +1,3 @@
-/**
- * stockController.js
- * HTTP handlers for stock management — single and bulk updates,
- * webhook configuration, test webhook, reset, error simulation, and status.
- */
-
 import * as stockService from '../services/stockService.js';
 import * as webhookService from '../services/webhookService.js';
 import { sendSuccess, sendError } from '../utils/responses.js';
@@ -26,12 +20,12 @@ export const updateStock = (req, res, next) => {
     const { stock } = req.body;
 
     if (stock === undefined || stock === null) {
-      return sendError(res, '"stock" field is required in request body', 400);
+      return sendError(res, 'Stock wajib diisi', 400);
     }
 
     const numericStock = Number(stock);
     if (isNaN(numericStock)) {
-      return sendError(res, '"stock" must be a valid number', 400);
+      return sendError(res, 'Stock harus berupa angka', 400);
     }
 
     const updatedProduct = stockService.updateSingleStock(marketplace, sku, numericStock);
@@ -44,7 +38,7 @@ export const updateStock = (req, res, next) => {
         product: updatedProduct,
         updatedAt: updatedProduct.updatedAt,
       },
-      `Stock updated for SKU "${sku}" in ${marketplace}`
+      `Stock berhasil diupdate untuk SKU "${sku}" di ${marketplace}`
     );
   } catch (err) {
     next(err);
@@ -63,7 +57,7 @@ export const bulkUpdateStock = (req, res, next) => {
     const { updates } = req.body;
 
     if (!updates) {
-      return sendError(res, '"updates" array is required in request body', 400);
+      return sendError(res, 'Updates wajib diisi', 400);
     }
 
     const result = stockService.bulkUpdateStock(marketplace, updates);
@@ -72,7 +66,7 @@ export const bulkUpdateStock = (req, res, next) => {
 
     return res.status(status).json({
       success: result.successCount > 0,
-      message: `Bulk stock update: ${result.successCount} succeeded, ${result.failureCount} failed`,
+      message: `Stock berhasil diupdate: ${result.successCount} berhasil, ${result.failureCount} gagal`,
       data: result,
       timestamp: new Date().toISOString(),
     });
@@ -81,8 +75,7 @@ export const bulkUpdateStock = (req, res, next) => {
   }
 };
 
-// ─── Webhook Handlers ─────────────────────────────────────────────────────────
-
+// Webhook Handlers 
 /**
  * POST /api/:marketplace/webhook/config
  * Configure the webhook URL for a marketplace.
@@ -94,20 +87,20 @@ export const configureWebhook = (req, res, next) => {
     const { marketplace } = req.params;
 
     if (!Object.values(MARKETPLACES).includes(marketplace)) {
-      return sendError(res, `Invalid marketplace: ${marketplace}`, 400);
+      return sendError(res, `Marketplace tidak valid: ${marketplace}`, 400);
     }
 
     const { url, secret, events, enabled } = req.body;
 
     if (!url) {
-      return sendError(res, '"url" is required', 400);
+      return sendError(res, 'url wajib diisi', 400);
     }
 
     // Validate URL format
     try {
       new URL(url);
     } catch {
-      return sendError(res, '"url" must be a valid URL (include http:// or https://)', 400);
+      return sendError(res, 'url harus berupa url yang valid (include http:// or https://)', 400);
     }
 
     const config = webhookService.configureWebhook(marketplace, {
@@ -117,7 +110,7 @@ export const configureWebhook = (req, res, next) => {
       ...(enabled !== undefined && { enabled }),
     });
 
-    return sendSuccess(res, { config }, `Webhook configured for ${marketplace}`);
+    return sendSuccess(res, { config }, `Webhook berhasil dikonfigurasi untuk ${marketplace}`);
   } catch (err) {
     next(err);
   }
@@ -132,15 +125,15 @@ export const testWebhook = async (req, res, next) => {
     const { marketplace } = req.params;
 
     if (!Object.values(MARKETPLACES).includes(marketplace)) {
-      return sendError(res, `Invalid marketplace: ${marketplace}`, 400);
+      return sendError(res, `Marketplace tidak valid: ${marketplace}`, 400);
     }
 
     const result = await webhookService.sendTestWebhook(marketplace);
     const config = webhookService.getWebhookConfig(marketplace);
 
     const message = result.delivered
-      ? `Test webhook delivered successfully to ${config?.url}`
-      : `Test webhook failed: ${result.error}`;
+      ? `Test webhook berhasil dikirim ke ${config?.url}`
+      : `Test webhook gagal: ${result.error}`;
 
     return sendSuccess(res, { deliveryResult: result, webhookUrl: config?.url }, message);
   } catch (err) {
@@ -148,8 +141,7 @@ export const testWebhook = async (req, res, next) => {
   }
 };
 
-// ─── Marketplace Operations ───────────────────────────────────────────────────
-
+// Marketplace Operations 
 /**
  * POST /api/:marketplace/reset
  * Reset all marketplace data back to seed state.
@@ -160,14 +152,11 @@ export const resetMarketplace = async (req, res, next) => {
     const { marketplace } = req.params;
 
     if (!Object.values(MARKETPLACES).includes(marketplace)) {
-      return sendError(res, `Invalid marketplace: ${marketplace}`, 400);
+      return sendError(res, `Marketplace tidak valid: ${marketplace}`, 400);
     }
 
-    // Dynamically re-import seed data to get fresh copies
-    // We reload the module to get fresh seed data
     const { shopeeProducts, tokopediaProducts, lazadaProducts } = await import('../models/Product.js');
 
-    // Reset stock to original values per marketplace
     const stockResets = {
       shopee: [150, 320, 88, 75, 200, 112],
       tokopedia: [65, 30, 480, 45, 150, 88],
@@ -207,7 +196,7 @@ export const resetMarketplace = async (req, res, next) => {
         ordersRemoved: removedOrderCount,
         errorSimulationReset: true,
       },
-      `Marketplace "${marketplace}" has been reset to initial state`
+      `Marketplace "${marketplace}" berhasil direset`
     );
   } catch (err) {
     next(err);
@@ -226,7 +215,7 @@ export const simulateError = (req, res, next) => {
     const { mode } = req.body;
 
     if (!Object.values(MARKETPLACES).includes(marketplace)) {
-      return sendError(res, `Invalid marketplace: ${marketplace}`, 400);
+      return sendError(res, `Marketplace tidak valid: ${marketplace}`, 400);
     }
 
     const validModes = Object.values(ERROR_MODES);
@@ -242,8 +231,8 @@ export const simulateError = (req, res, next) => {
 
     const message =
       mode === ERROR_MODES.NONE
-        ? `Error simulation disabled for ${marketplace}`
-        : `Error simulation set to "${mode}" for ${marketplace}`;
+        ? `Error simulation dinonaktifkan untuk ${marketplace}`
+        : `Error simulation berhasil diaktifkan "${mode}" untuk ${marketplace}`;
 
     return sendSuccess(res, { marketplace, mode }, message);
   } catch (err) {
@@ -260,7 +249,7 @@ export const getStatus = (req, res, next) => {
     const { marketplace } = req.params;
 
     if (!Object.values(MARKETPLACES).includes(marketplace)) {
-      return sendError(res, `Invalid marketplace: ${marketplace}`, 400);
+      return sendError(res, `Marketplace tidak valid: ${marketplace}`, 400);
     }
 
     const store = productStores[marketplace];
@@ -291,7 +280,7 @@ export const getStatus = (req, res, next) => {
           : null,
         checkedAt: new Date().toISOString(),
       },
-      `Status retrieved for ${marketplace}`
+      `Status berhasil diambil untuk ${marketplace}`
     );
   } catch (err) {
     next(err);

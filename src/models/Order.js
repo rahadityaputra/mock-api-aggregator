@@ -1,16 +1,6 @@
-/**
- * Order.js
- * In-memory order store and Order model factory.
- */
-
 import { v4 as uuidv4 } from 'uuid';
 
-// ─── In-Memory Store ──────────────────────────────────────────────────────────
-
 export const orders = [];
-
-// ─── Order Status Constants ───────────────────────────────────────────────────
-
 export const ORDER_STATUS = {
   PENDING: 'pending',
   CONFIRMED: 'confirmed',
@@ -19,8 +9,6 @@ export const ORDER_STATUS = {
   DELIVERED: 'delivered',
   CANCELLED: 'cancelled',
 };
-
-// ─── Model Factory ────────────────────────────────────────────────────────────
 
 /**
  * Creates a new order record ready for storage.
@@ -50,7 +38,6 @@ export const createOrder = ({
   const now = new Date().toISOString();
   const totalPrice = unitPrice * quantity;
 
-  // Each marketplace wraps the order in slightly different envelope structures
   const marketplaceOrderId = generateMarketplaceOrderId(marketplace);
 
   return {

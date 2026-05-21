@@ -1,10 +1,3 @@
-/**
- * authentication.js
- * Express middleware for JWT-based route protection.
- * Validates Bearer token from Authorization header and attaches
- * the decoded user payload to req.user.
- */
-
 import { verifyToken } from '../utils/jwt.js';
 import { users } from '../models/User.js';
 import { sendUnauthorized } from '../utils/responses.js';
@@ -17,9 +10,8 @@ import { sendUnauthorized } from '../utils/responses.js';
 export const authenticate = (req, res, next) => {
   const authHeader = req.headers['authorization'];
 
-  // Expect: "Bearer <token>"
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return sendUnauthorized(res, 'No token provided. Include Authorization: Bearer <token>');
+    return sendUnauthorized(res, 'Tidak ada token terdeteksi.');
   }
 
   const token = authHeader.split(' ')[1];
@@ -27,25 +19,23 @@ export const authenticate = (req, res, next) => {
   try {
     const decoded = verifyToken(token);
 
-    // Confirm user still exists in the store
     const user = users.find((u) => u.id === decoded.id);
     if (!user) {
-      return sendUnauthorized(res, 'User account no longer exists');
+      return sendUnauthorized(res, 'Akun user sudah tidak ada');
     }
 
-    // Attach sanitized user info (without password) to the request
     const { password, ...safeUser } = user;
     req.user = safeUser;
 
     next();
   } catch (err) {
     if (err.name === 'TokenExpiredError') {
-      return sendUnauthorized(res, 'Token has expired. Please log in again.');
+      return sendUnauthorized(res, 'Token sudah kadaluarsa. Silakan login kembali.');
     }
     if (err.name === 'JsonWebTokenError') {
-      return sendUnauthorized(res, 'Invalid token. Please log in again.');
+      return sendUnauthorized(res, 'Token tidak valid. Silakan login kembali.');
     }
-    return sendUnauthorized(res, 'Authentication failed');
+    return sendUnauthorized(res, 'Autentikasi Gagal');
   }
 };
 

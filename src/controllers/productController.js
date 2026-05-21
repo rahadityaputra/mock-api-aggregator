@@ -1,8 +1,3 @@
-/**
- * productController.js
- * HTTP handlers for product listing and detail endpoints.
- */
-
 import * as productService from '../services/productService.js';
 import { sendSuccess, sendPaginated, sendError } from '../utils/responses.js';
 import { errorSimulation } from '../models/WebhookConfig.js';
@@ -17,7 +12,6 @@ export const listProducts = (req, res, next) => {
   try {
     const { marketplace } = req.params;
 
-    // Check error simulation mode
     const simError = checkSimulatedError(marketplace, res);
     if (simError) return;
 
@@ -32,7 +26,7 @@ export const listProducts = (req, res, next) => {
       total,
       page,
       limit,
-      `Products retrieved from ${marketplace}`
+      `Produk berhasil diambil dari ${marketplace}`
     );
   } catch (err) {
     next(err);
@@ -51,7 +45,7 @@ export const getProduct = (req, res, next) => {
     if (simError) return;
 
     const product = productService.getProductById(marketplace, id);
-    return sendSuccess(res, { product }, `Product retrieved from ${marketplace}`);
+    return sendSuccess(res, { product }, `Produk berhasil diambil dari ${marketplace}`);
   } catch (err) {
     next(err);
   }
@@ -64,7 +58,7 @@ export const getProduct = (req, res, next) => {
  * Returns true if a simulated error was sent (caller should stop processing).
  *
  * @param {string} marketplace
- * @param {object} res - Express response
+ * @param {object} res 
  * @returns {boolean}
  */
 const checkSimulatedError = (marketplace, res) => {
@@ -81,7 +75,6 @@ const checkSimulatedError = (marketplace, res) => {
       return true;
 
     case 'timeout':
-      // Simulate a very late response — in a real test, the client will timeout first
       res.status(503).json({
         success: false,
         message: '[SIMULATED] Request timed out. Please try again.',

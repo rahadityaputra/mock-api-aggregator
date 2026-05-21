@@ -1,21 +1,16 @@
-/**
- * auth.js
- * Routes for authentication endpoints.
- */
-
 import { Router } from 'express';
 import { register, login, getMe } from '../controllers/authController.js';
 import { authenticate } from '../middleware/authentication.js';
 
 const router = Router();
 
-// POST /api/auth/register  — Create new account
+// POST /api/auth/register
 router.post('/register', register);
 
-// POST /api/auth/login     — Authenticate and receive JWT
+// POST /api/auth/login
 router.post('/login', login);
 
-// GET  /api/auth/me        — Get current user profile (protected)
+// GET  /api/auth/me
 router.get('/me', authenticate, getMe);
 
 export default router;

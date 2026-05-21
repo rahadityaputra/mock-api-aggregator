@@ -1,9 +1,3 @@
-/**
- * authController.js
- * HTTP handlers for authentication endpoints.
- * Delegates all business logic to authService.
- */
-
 import * as authService from '../services/authService.js';
 import { sendSuccess, sendCreated, sendError } from '../utils/responses.js';
 
@@ -17,14 +11,13 @@ export const register = async (req, res, next) => {
   try {
     const { email, username, password, name } = req.body;
 
-    // Basic field presence validation
     if (!email || !username || !password) {
-      return sendError(res, 'email, username, and password are required', 400);
+      return sendError(res, 'email, username, dan password wajib diisi', 400);
     }
 
     const { user, token } = await authService.registerUser({ email, username, password, name });
 
-    return sendCreated(res, { user, token }, 'Account registered successfully');
+    return sendCreated(res, { user, token }, 'Akun berhasil dibuat');
   } catch (err) {
     next(err);
   }
@@ -41,12 +34,12 @@ export const login = async (req, res, next) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return sendError(res, 'email and password are required', 400);
+      return sendError(res, 'email dan password wajib diisi', 400);
     }
 
     const { user, token } = await authService.loginUser(email, password);
 
-    return sendSuccess(res, { user, token }, 'Login successful');
+    return sendSuccess(res, { user, token }, 'Login berhasil');
   } catch (err) {
     next(err);
   }
@@ -60,7 +53,7 @@ export const login = async (req, res, next) => {
 export const getMe = async (req, res, next) => {
   try {
     const user = authService.getCurrentUser(req.user.id);
-    return sendSuccess(res, { user }, 'Profile retrieved');
+    return sendSuccess(res, { user }, 'Profile berhasil diambil');
   } catch (err) {
     next(err);
   }

@@ -1,9 +1,3 @@
-/**
- * webhookService.js
- * Handles webhook delivery to configured aggregator URLs.
- * Fires-and-forgets: webhook failures never block business operations.
- */
-
 import axios from 'axios';
 import { webhookConfigs } from '../models/WebhookConfig.js';
 import { WEBHOOK_EVENTS } from '../config/constants.js';

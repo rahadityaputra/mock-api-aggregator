@@ -1,20 +1,11 @@
-/**
- * constants.js
- * Central configuration for all marketplace identifiers, SKU formats,
- * field mappings, and default data seeds.
- */
-
-// ─── Marketplace Identifiers ────────────────────────────────────────────────
-
+// Marketplace Identifiers
 export const MARKETPLACES = {
   SHOPEE: 'shopee',
   TOKOPEDIA: 'tokopedia',
   LAZADA: 'lazada',
 };
 
-// ─── Field Name Mappings ─────────────────────────────────────────────────────
-// Each marketplace uses different field names for the same concepts.
-
+// Mapping
 export const FIELD_MAP = {
   shopee: {
     productId: 'item_id',
@@ -60,8 +51,6 @@ export const FIELD_MAP = {
   },
 };
 
-// ─── HTTP Status Codes ────────────────────────────────────────────────────────
-
 export const HTTP_STATUS = {
   OK: 200,
   CREATED: 201,
@@ -75,8 +64,6 @@ export const HTTP_STATUS = {
   SERVICE_UNAVAILABLE: 503,
 };
 
-// ─── Error Simulation Modes ───────────────────────────────────────────────────
-
 export const ERROR_MODES = {
   NONE: 'none',
   RATE_LIMIT: 'rate_limit',
@@ -84,8 +71,6 @@ export const ERROR_MODES = {
   SERVER_ERROR: 'server_error',
   AUTH_FAILURE: 'auth_failure',
 };
-
-// ─── Webhook Events ───────────────────────────────────────────────────────────
 
 export const WEBHOOK_EVENTS = {
   ORDER_CREATED: 'order.created',

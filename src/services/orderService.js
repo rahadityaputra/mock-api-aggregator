@@ -1,9 +1,3 @@
-/**
- * orderService.js
- * Business logic for order creation and retrieval.
- * Orchestrates stock validation, order persistence, stock reduction, and webhook firing.
- */
-
 import { orders, createOrder } from '../models/Order.js';
 import { productStores, getProductIdField, getSkuField, getStockField } from '../models/Product.js';
 import { triggerOrderWebhook } from './webhookService.js';
@@ -27,28 +21,28 @@ import { MARKETPLACES } from '../config/constants.js';
  */
 export const placeOrder = (marketplace, userId, body) => {
   if (!Object.values(MARKETPLACES).includes(marketplace)) {
-    const err = new Error(`Invalid marketplace: ${marketplace}`);
+    const err = new Error(`Marketplace tidak valid: ${marketplace}`);
     err.status = 400;
     throw err;
   }
 
   const { productId, quantity, shippingAddress = {} } = body;
 
-  // ── Validate inputs ────────────────────────────────────────────────────────
+  // Validate inputs 
   if (!productId) {
-    const err = new Error('productId is required');
+    const err = new Error('productId tidak ditemukan');
     err.status = 400;
     throw err;
   }
 
   const qty = parseInt(quantity, 10);
   if (!quantity || qty < 1 || isNaN(qty)) {
-    const err = new Error('quantity must be a positive integer');
+    const err = new Error('Quantity harus valid.');
     err.status = 400;
     throw err;
   }
 
-  // ── Locate product ─────────────────────────────────────────────────────────
+  // Locate product 
   const store = productStores[marketplace];
   const idField = getProductIdField(marketplace);
   const skuField = getSkuField(marketplace);
@@ -56,25 +50,23 @@ export const placeOrder = (marketplace, userId, body) => {
 
   const product = store.find((p) => p[idField] === productId);
   if (!product) {
-    const err = new Error(`Product "${productId}" not found in ${marketplace}`);
+    const err = new Error(`Produk "${productId}" tidak ditemukan di ${marketplace}`);
     err.status = 404;
     throw err;
   }
 
-  // ── Check stock ────────────────────────────────────────────────────────────
+  // Check stock 
   const currentStock = product[stockField];
   if (currentStock < qty) {
     const err = new Error(
-      `Insufficient stock. Requested: ${qty}, Available: ${currentStock}`
+      `Stock tidak cukup. Permintaan anda: ${qty}, Stock tersedia: ${currentStock}`
     );
     err.status = 422;
     throw err;
   }
 
-  // ── Extract name field dynamically ─────────────────────────────────────────
   const productName = product.item_name || product.name;
 
-  // ── Build and persist order ────────────────────────────────────────────────
   const order = createOrder({
     marketplace,
     userId,
@@ -88,15 +80,14 @@ export const placeOrder = (marketplace, userId, body) => {
 
   orders.push(order);
 
-  // ── Reduce stock ───────────────────────────────────────────────────────────
   product[stockField] -= qty;
   product.updatedAt = new Date().toISOString();
 
   console.log(
-    `[ORDER] Created: ${order.marketplace_order_id} | ${marketplace} | qty:${qty} | stock:${currentStock}→${product[stockField]}`
+    `[ORDER] Dibuat: ${order.marketplace_order_id} | ${marketplace} | qty:${qty} | stock:${currentStock}→${product[stockField]}`
   );
 
-  // ── Trigger webhook (fire & forget) ───────────────────────────────────────
+  // Trigger webhook (fire & forget) 
   triggerOrderWebhook(marketplace, order);
 
   return order;
@@ -149,7 +140,7 @@ export const getOrderById = (marketplace, userId, orderId) => {
   );
 
   if (!order) {
-    const err = new Error(`Order "${orderId}" not found`);
+    const err = new Error(`Pesanan "${orderId}" tidak ditemukan`);
     err.status = 404;
     throw err;
   }

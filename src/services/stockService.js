@@ -1,9 +1,3 @@
-/**
- * stockService.js
- * Business logic for stock updates — single SKU and bulk operations.
- * Stock changes from the aggregator override marketplace-native stock.
- */
-
 import { productStores, getSkuField, getStockField } from '../models/Product.js';
 import { MARKETPLACES } from '../config/constants.js';
 
@@ -18,13 +12,13 @@ import { MARKETPLACES } from '../config/constants.js';
  */
 export const updateSingleStock = (marketplace, sku, newStock) => {
   if (!Object.values(MARKETPLACES).includes(marketplace)) {
-    const err = new Error(`Invalid marketplace: ${marketplace}`);
+    const err = new Error(`Marketplace tidak didukung: ${marketplace}`);
     err.status = 400;
     throw err;
   }
 
   if (typeof newStock !== 'number' || newStock < 0 || !Number.isFinite(newStock)) {
-    const err = new Error('Stock must be a non-negative finite number');
+    const err = new Error('Stock harus valid.');
     err.status = 400;
     throw err;
   }
@@ -36,13 +30,13 @@ export const updateSingleStock = (marketplace, sku, newStock) => {
   const product = store.find((p) => p[skuField] === sku);
 
   if (!product) {
-    const err = new Error(`SKU "${sku}" not found in ${marketplace}`);
+    const err = new Error(`SKU "${sku}" tidak ditemukan di ${marketplace}`);
     err.status = 404;
     throw err;
   }
 
   const previousStock = product[stockField];
-  product[stockField] = Math.floor(newStock); // enforce integer stock
+  product[stockField] = Math.floor(newStock); 
   product.updatedAt = new Date().toISOString();
 
   console.log(
@@ -62,19 +56,19 @@ export const updateSingleStock = (marketplace, sku, newStock) => {
  */
 export const bulkUpdateStock = (marketplace, updates) => {
   if (!Object.values(MARKETPLACES).includes(marketplace)) {
-    const err = new Error(`Invalid marketplace: ${marketplace}`);
+    const err = new Error(`Marketplace tidak didukung: ${marketplace}`);
     err.status = 400;
     throw err;
   }
 
   if (!Array.isArray(updates) || updates.length === 0) {
-    const err = new Error('Updates must be a non-empty array');
+    const err = new Error('Updates tidak valid.');
     err.status = 400;
     throw err;
   }
 
   if (updates.length > 100) {
-    const err = new Error('Bulk update limit is 100 SKUs per request');
+    const err = new Error('Update dibatasi hanya 100 SKU per request.');
     err.status = 400;
     throw err;
   }
@@ -85,7 +79,7 @@ export const bulkUpdateStock = (marketplace, updates) => {
 
   for (const { sku, stock } of updates) {
     try {
-      if (!sku) throw new Error('SKU is required');
+      if (!sku) throw new Error('SKU wajib diisi!');
       const updatedProduct = updateSingleStock(marketplace, sku, stock);
       results.push({ sku, success: true, newStock: stock, product: updatedProduct });
       successCount++;
@@ -114,7 +108,7 @@ export const getStockBySku = (marketplace, sku) => {
   const product = store.find((p) => p[skuField] === sku);
 
   if (!product) {
-    const err = new Error(`SKU "${sku}" not found in ${marketplace}`);
+    const err = new Error(`SKU "${sku}" tidak ditemukan di ${marketplace}`);
     err.status = 404;
     throw err;
   }

@@ -1,14 +1,6 @@
-/**
- * Product.js
- * In-memory product stores per marketplace with seed data.
- * Each marketplace has its own field naming convention.
- */
-
 import { v4 as uuidv4 } from 'uuid';
 
-// ─── Shopee Products ──────────────────────────────────────────────────────────
-// Uses: item_id, model_sku (SHP-*), item_name, shopid
-
+// Shoppe
 export const shopeeProducts = [
   {
     item_id: uuidv4(),
@@ -108,9 +100,7 @@ export const shopeeProducts = [
   },
 ];
 
-// ─── Tokopedia Products ───────────────────────────────────────────────────────
-// Uses: product_id, sku (TOK-*), name, shop_id
-
+// Tokopedia
 export const tokopediaProducts = [
   {
     product_id: uuidv4(),
@@ -216,9 +206,7 @@ export const tokopediaProducts = [
   },
 ];
 
-// ─── Lazada Products ──────────────────────────────────────────────────────────
-// Uses: id, seller_sku (LZD-*), name, available (stock), seller_id
-
+// Lazada 
 export const lazadaProducts = [
   {
     id: uuidv4(),
@@ -324,35 +312,24 @@ export const lazadaProducts = [
   },
 ];
 
-// ─── Product Store Registry ───────────────────────────────────────────────────
-
+// Product Store Registry 
 export const productStores = {
   shopee: shopeeProducts,
   tokopedia: tokopediaProducts,
   lazada: lazadaProducts,
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Get the primary ID field name for a marketplace.
- */
+// Helpers
 export const getProductIdField = (marketplace) => {
   const map = { shopee: 'item_id', tokopedia: 'product_id', lazada: 'id' };
   return map[marketplace] || 'id';
 };
 
-/**
- * Get the stock field name for a marketplace.
- */
 export const getStockField = (marketplace) => {
   const map = { shopee: 'stock', tokopedia: 'stock', lazada: 'available' };
   return map[marketplace] || 'stock';
 };
 
-/**
- * Get the SKU field name for a marketplace.
- */
 export const getSkuField = (marketplace) => {
   const map = { shopee: 'model_sku', tokopedia: 'sku', lazada: 'seller_sku' };
   return map[marketplace] || 'sku';

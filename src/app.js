@@ -1,9 +1,3 @@
-/**
- * app.js
- * Express application factory — configures all middleware and mounts routes.
- * Separated from server.js so it can be imported for testing without starting a listener.
- */
-
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
@@ -14,32 +8,30 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 const app = express();
 
-// ─── Security & CORS ──────────────────────────────────────────────────────────
+// Security & CORS 
 app.use(
   cors({
-    origin: '*', // Open for all origins in mock/dev usage
+    origin: '*', 
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Marketplace', 'X-Webhook-Secret'],
     credentials: false,
   })
 );
 
-// ─── Body Parsing ─────────────────────────────────────────────────────────────
+// Body Parsing 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// ─── Request Logging ──────────────────────────────────────────────────────────
-// Use 'combined' in production for Apache-style logs, 'dev' for colorized development output
+// Request Logging
 const logFormat = process.env.NODE_ENV === 'production' ? 'combined' : 'dev';
 app.use(morgan(logFormat));
 
-// ─── Root Info Endpoint ───────────────────────────────────────────────────────
+// Root Info Endpoint
 app.get('/', (req, res) => {
   res.status(200).json({
     name: 'Mock Marketplace API',
     version: '1.0.0',
-    description: 'Production-ready mock API simulating Shopee, Tokopedia, and Lazada',
-    documentation: 'See README.md for full API documentation',
+    description: 'Mock API untuk Shopee, Tokopedia, and Lazada',
     baseUrl: '/api',
     endpoints: {
       health: 'GET /health',
@@ -77,10 +69,8 @@ app.get('/', (req, res) => {
   });
 });
 
-// ─── API Routes ───────────────────────────────────────────────────────────────
+// API Routes 
 app.use('/api', apiRoutes);
-
-// Health check also available at top level for load balancers / reverse proxies
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
@@ -90,7 +80,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// ─── Error Handling (must be last) ────────────────────────────────────────────
+// Error Handling 
 app.use(notFoundHandler);
 app.use(errorHandler);
 

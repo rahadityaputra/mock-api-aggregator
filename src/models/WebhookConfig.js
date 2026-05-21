@@ -1,14 +1,3 @@
-/**
- * WebhookConfig.js
- * In-memory webhook configuration store per marketplace.
- */
-
-// ─── Default Config ───────────────────────────────────────────────────────────
-
-/**
- * Stores one webhook URL per marketplace.
- * Keyed by marketplace name.
- */
 export const webhookConfigs = {
   shopee: {
     url: process.env.DEFAULT_WEBHOOK_URL || 'http://localhost:3000/api/webhook',
@@ -33,12 +22,7 @@ export const webhookConfigs = {
   },
 };
 
-// ─── Error Simulation State ───────────────────────────────────────────────────
-
-/**
- * Per-marketplace error simulation mode.
- * Set via POST /api/:marketplace/simulate-error
- */
+// Error Simulation State
 export const errorSimulation = {
   shopee: 'none',
   tokopedia: 'none',

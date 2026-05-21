@@ -1,8 +1,3 @@
-/**
- * jwt.js
- * Utility functions for generating and verifying JWT tokens.
- */
-
 import jwt from 'jsonwebtoken';
 
 const SECRET = process.env.JWT_SECRET || 'fallback_dev_secret_not_for_production';

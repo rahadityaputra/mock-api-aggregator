@@ -1,10 +1,4 @@
 /**
- * responses.js
- * Standardized HTTP response formatting utilities.
- * All controllers should use these helpers for consistency.
- */
-
-/**
  * Send a successful response.
  *
  * @param {object} res         - Express response object

@@ -1,8 +1,3 @@
-/**
- * productService.js
- * Business logic for product listing and detail retrieval per marketplace.
- */
-
 import {
   productStores,
   getProductIdField,
@@ -18,7 +13,7 @@ import { MARKETPLACES } from '../config/constants.js';
 const validateMarketplace = (marketplace) => {
   if (!Object.values(MARKETPLACES).includes(marketplace)) {
     const err = new Error(
-      `Invalid marketplace "${marketplace}". Valid options: shopee, tokopedia, lazada`
+      `Marketplace tidak didukung!"${marketplace}". Valid options: shopee, tokopedia, lazada`
     );
     err.status = 400;
     throw err;
@@ -48,7 +43,6 @@ export const listProducts = (marketplace, queryParams = {}) => {
   const pageNum = Math.max(1, parseInt(page, 10));
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
 
-  // Determine price and name fields dynamically per marketplace
   const nameField = marketplace === 'shopee' ? 'item_name' : 'name';
   const priceField = 'price';
   const categoryField = marketplace === 'lazada' ? 'primary_category' : 'category';
@@ -105,7 +99,7 @@ export const getProductById = (marketplace, productId) => {
   const product = store.find((p) => p[idField] === productId);
 
   if (!product) {
-    const err = new Error(`Product with ID "${productId}" not found in ${marketplace}`);
+    const err = new Error(`Product dengan ID"${productId}" tidak ditemukan di ${marketplace}`);
     err.status = 404;
     throw err;
   }
