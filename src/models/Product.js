@@ -1,0 +1,359 @@
+/**
+ * Product.js
+ * In-memory product stores per marketplace with seed data.
+ * Each marketplace has its own field naming convention.
+ */
+
+import { v4 as uuidv4 } from 'uuid';
+
+// ─── Shopee Products ──────────────────────────────────────────────────────────
+// Uses: item_id, model_sku (SHP-*), item_name, shopid
+
+export const shopeeProducts = [
+  {
+    item_id: uuidv4(),
+    model_sku: 'SHP-ELEC-001',
+    item_name: 'Wireless Bluetooth Earbuds Pro',
+    description: 'Premium TWS earbuds with active noise cancellation, 30hr battery, IPX5 waterproof',
+    price: 299000,
+    stock: 150,
+    category: 'Electronics',
+    images: ['https://picsum.photos/seed/shp1/400/400'],
+    item_rating: { rating_star: 4.8, rating_count: [0, 12, 34, 210, 987] },
+    historical_sold: 1243,
+    shopid: 'SHP-SHOP-88123',
+    weight: 0.05,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    item_id: uuidv4(),
+    model_sku: 'SHP-FASH-002',
+    item_name: 'Slim Fit Cotton Polo Shirt',
+    description: 'Premium 100% cotton polo, available in multiple colors, machine washable',
+    price: 189000,
+    stock: 320,
+    category: 'Fashion',
+    images: ['https://picsum.photos/seed/shp2/400/400'],
+    item_rating: { rating_star: 4.6, rating_count: [0, 5, 21, 178, 654] },
+    historical_sold: 858,
+    shopid: 'SHP-SHOP-88123',
+    weight: 0.3,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    item_id: uuidv4(),
+    model_sku: 'SHP-HOME-003',
+    item_name: 'Ceramic Non-Stick Frying Pan 28cm',
+    description: 'Eco-friendly ceramic coating, compatible with all stovetops including induction',
+    price: 245000,
+    stock: 88,
+    category: 'Home & Living',
+    images: ['https://picsum.photos/seed/shp3/400/400'],
+    item_rating: { rating_star: 4.7, rating_count: [0, 3, 18, 145, 521] },
+    historical_sold: 687,
+    shopid: 'SHP-SHOP-88123',
+    weight: 1.2,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    item_id: uuidv4(),
+    model_sku: 'SHP-SPORT-004',
+    item_name: 'Running Shoes Lightweight Mesh',
+    description: 'Ultra-lightweight mesh upper, responsive foam midsole, anti-slip rubber outsole',
+    price: 459000,
+    stock: 75,
+    category: 'Sports & Outdoors',
+    images: ['https://picsum.photos/seed/shp4/400/400'],
+    item_rating: { rating_star: 4.9, rating_count: [0, 2, 9, 87, 412] },
+    historical_sold: 510,
+    shopid: 'SHP-SHOP-88123',
+    weight: 0.6,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    item_id: uuidv4(),
+    model_sku: 'SHP-BEAUTY-005',
+    item_name: 'Vitamin C Brightening Serum 30ml',
+    description: '15% Vitamin C + Niacinamide formula, brightens skin tone, reduces dark spots',
+    price: 175000,
+    stock: 200,
+    category: 'Beauty & Personal Care',
+    images: ['https://picsum.photos/seed/shp5/400/400'],
+    item_rating: { rating_star: 4.7, rating_count: [0, 8, 27, 190, 730] },
+    historical_sold: 955,
+    shopid: 'SHP-SHOP-88123',
+    weight: 0.08,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    item_id: uuidv4(),
+    model_sku: 'SHP-ELEC-006',
+    item_name: 'Portable Power Bank 20000mAh',
+    description: '65W PD fast charging, dual USB-A + USB-C ports, LED power indicator',
+    price: 349000,
+    stock: 112,
+    category: 'Electronics',
+    images: ['https://picsum.photos/seed/shp6/400/400'],
+    item_rating: { rating_star: 4.6, rating_count: [0, 11, 38, 220, 810] },
+    historical_sold: 1079,
+    shopid: 'SHP-SHOP-88123',
+    weight: 0.45,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
+// ─── Tokopedia Products ───────────────────────────────────────────────────────
+// Uses: product_id, sku (TOK-*), name, shop_id
+
+export const tokopediaProducts = [
+  {
+    product_id: uuidv4(),
+    sku: 'TOK-ELEC-001',
+    name: 'Mechanical Gaming Keyboard RGB',
+    description: 'TKL layout, Cherry MX Red switches, per-key RGB, aluminum top frame, N-key rollover',
+    price: 899000,
+    stock: 65,
+    category: 'Electronics',
+    images: ['https://picsum.photos/seed/tok1/400/400'],
+    rating: { average: 4.9, total_review: 287 },
+    sold: 342,
+    shop_id: 'TOK-SHOP-44561',
+    weight: 1.1,
+    condition: 'new',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    product_id: uuidv4(),
+    sku: 'TOK-FURN-002',
+    name: 'Ergonomic Office Chair Mesh Back',
+    description: 'Breathable mesh backrest, adjustable lumbar support, 360° swivel, 150kg capacity',
+    price: 1850000,
+    stock: 30,
+    category: 'Furniture',
+    images: ['https://picsum.photos/seed/tok2/400/400'],
+    rating: { average: 4.7, total_review: 153 },
+    sold: 198,
+    shop_id: 'TOK-SHOP-44561',
+    weight: 18.0,
+    condition: 'new',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    product_id: uuidv4(),
+    sku: 'TOK-FOOD-003',
+    name: 'Premium Arabica Coffee Beans 500g',
+    description: 'Single origin Ethiopian Yirgacheffe, light roast, fruity & floral notes',
+    price: 125000,
+    stock: 480,
+    category: 'Food & Beverages',
+    images: ['https://picsum.photos/seed/tok3/400/400'],
+    rating: { average: 4.8, total_review: 612 },
+    sold: 1875,
+    shop_id: 'TOK-SHOP-44561',
+    weight: 0.55,
+    condition: 'new',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    product_id: uuidv4(),
+    sku: 'TOK-AUTO-004',
+    name: 'Car Dash Camera 4K HDR Dual Lens',
+    description: '4K front + 1080P rear recording, Sony Starvis sensor, built-in GPS, WiFi app control',
+    price: 675000,
+    stock: 45,
+    category: 'Automotive',
+    images: ['https://picsum.photos/seed/tok4/400/400'],
+    rating: { average: 4.8, total_review: 194 },
+    sold: 267,
+    shop_id: 'TOK-SHOP-44561',
+    weight: 0.25,
+    condition: 'new',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    product_id: uuidv4(),
+    sku: 'TOK-BOOK-005',
+    name: 'Clean Code: A Handbook of Agile Software',
+    description: 'By Robert C. Martin. Essential reading for software developers on writing clean, maintainable code',
+    price: 185000,
+    stock: 150,
+    category: 'Books',
+    images: ['https://picsum.photos/seed/tok5/400/400'],
+    rating: { average: 4.9, total_review: 841 },
+    sold: 2134,
+    shop_id: 'TOK-SHOP-44561',
+    weight: 0.45,
+    condition: 'new',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    product_id: uuidv4(),
+    sku: 'TOK-ELEC-006',
+    name: 'Smart Home Hub Voice Control',
+    description: 'Compatible with Alexa & Google Home, controls up to 50 smart devices, Zigbee + Z-Wave',
+    price: 550000,
+    stock: 88,
+    category: 'Electronics',
+    images: ['https://picsum.photos/seed/tok6/400/400'],
+    rating: { average: 4.6, total_review: 219 },
+    sold: 445,
+    shop_id: 'TOK-SHOP-44561',
+    weight: 0.15,
+    condition: 'new',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
+// ─── Lazada Products ──────────────────────────────────────────────────────────
+// Uses: id, seller_sku (LZD-*), name, available (stock), seller_id
+
+export const lazadaProducts = [
+  {
+    id: uuidv4(),
+    seller_sku: 'LZD-ELEC-001',
+    name: 'Smart Watch Fitness Tracker AMOLED',
+    description: '1.43" AMOLED display, 100+ workout modes, SpO2 & stress monitor, 14-day battery',
+    price: 599000,
+    available: 95,
+    primary_category: 'Electronics',
+    images: ['https://picsum.photos/seed/lzd1/400/400'],
+    rating_score: 4.7,
+    sold_count: 876,
+    seller_id: 'LZD-SELLER-11234',
+    brand: 'TechVision',
+    condition: 'new',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: uuidv4(),
+    seller_sku: 'LZD-FASH-002',
+    name: 'Genuine Leather Wallet RFID Block',
+    description: 'Full-grain leather, RFID blocking technology, 8 card slots, coin pocket',
+    price: 285000,
+    available: 200,
+    primary_category: 'Fashion',
+    images: ['https://picsum.photos/seed/lzd2/400/400'],
+    rating_score: 4.8,
+    sold_count: 1342,
+    seller_id: 'LZD-SELLER-11234',
+    brand: 'LeatherCraft',
+    condition: 'new',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: uuidv4(),
+    seller_sku: 'LZD-HOME-003',
+    name: 'Robot Vacuum Cleaner Auto-Mapping LiDAR',
+    description: 'LiDAR navigation, 4000Pa suction, 3-in-1 vacuuming/mopping/sweeping, 120min runtime',
+    price: 2899000,
+    available: 22,
+    primary_category: 'Home Appliances',
+    images: ['https://picsum.photos/seed/lzd3/400/400'],
+    rating_score: 4.9,
+    sold_count: 315,
+    seller_id: 'LZD-SELLER-11234',
+    brand: 'CleanBot',
+    condition: 'new',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: uuidv4(),
+    seller_sku: 'LZD-BABY-004',
+    name: 'Baby Stroller Lightweight Foldable',
+    description: 'One-click fold, reversible seat, UV50+ canopy, 5-point harness, 15kg load capacity',
+    price: 1250000,
+    available: 40,
+    primary_category: 'Baby & Kids',
+    images: ['https://picsum.photos/seed/lzd4/400/400'],
+    rating_score: 4.7,
+    sold_count: 423,
+    seller_id: 'LZD-SELLER-11234',
+    brand: 'BabyComfort',
+    condition: 'new',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: uuidv4(),
+    seller_sku: 'LZD-SPORT-005',
+    name: 'Yoga Mat Premium Non-Slip 6mm',
+    description: 'Eco-friendly TPE material, double-sided non-slip texture, carrying strap included, 183x61cm',
+    price: 165000,
+    available: 300,
+    primary_category: 'Sports & Outdoors',
+    images: ['https://picsum.photos/seed/lzd5/400/400'],
+    rating_score: 4.6,
+    sold_count: 2187,
+    seller_id: 'LZD-SELLER-11234',
+    brand: 'FlexFit',
+    condition: 'new',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: uuidv4(),
+    seller_sku: 'LZD-ELEC-006',
+    name: 'USB-C Hub 10-in-1 Multiport Adapter',
+    description: '4K HDMI, 100W PD, 10Gbps USB 3.2, SD/microSD, Ethernet, 3.5mm audio',
+    price: 320000,
+    available: 175,
+    primary_category: 'Electronics',
+    images: ['https://picsum.photos/seed/lzd6/400/400'],
+    rating_score: 4.8,
+    sold_count: 1654,
+    seller_id: 'LZD-SELLER-11234',
+    brand: 'ConnectPro',
+    condition: 'new',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
+// ─── Product Store Registry ───────────────────────────────────────────────────
+
+export const productStores = {
+  shopee: shopeeProducts,
+  tokopedia: tokopediaProducts,
+  lazada: lazadaProducts,
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Get the primary ID field name for a marketplace.
+ */
+export const getProductIdField = (marketplace) => {
+  const map = { shopee: 'item_id', tokopedia: 'product_id', lazada: 'id' };
+  return map[marketplace] || 'id';
+};
+
+/**
+ * Get the stock field name for a marketplace.
+ */
+export const getStockField = (marketplace) => {
+  const map = { shopee: 'stock', tokopedia: 'stock', lazada: 'available' };
+  return map[marketplace] || 'stock';
+};
+
+/**
+ * Get the SKU field name for a marketplace.
+ */
+export const getSkuField = (marketplace) => {
+  const map = { shopee: 'model_sku', tokopedia: 'sku', lazada: 'seller_sku' };
+  return map[marketplace] || 'sku';
+};
