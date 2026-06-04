@@ -7,7 +7,11 @@ RUN npm install
 
 COPY . .
 
-# ⚠️ Aman karena Prisma generate tidak connect DB
+# DATABASE_URL dummy diperlukan agar prisma.config.ts bisa di-load saat build.
+# prisma generate tidak perlu koneksi DB nyata, hanya butuh schema.
+ARG DATABASE_URL=mysql://dummy:dummy@localhost:3306/dummy
+ENV DATABASE_URL=${DATABASE_URL}
+
 RUN npx prisma generate
 
 CMD ["npm", "start"]
