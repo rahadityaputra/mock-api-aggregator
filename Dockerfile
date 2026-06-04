@@ -14,4 +14,4 @@ ENV DATABASE_URL=${DATABASE_URL}
 
 RUN npx prisma generate
 
-CMD ["npm", "start"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]

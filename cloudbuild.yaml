@@ -11,6 +11,7 @@ steps:
       - 'push'
       - 'gcr.io/$PROJECT_ID/mock-marketplace-api'
 
+
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
@@ -30,7 +31,6 @@ steps:
       - 'DATABASE_URL=DATABASE_URL:latest'
 images:
   - 'gcr.io/$PROJECT_ID/mock-marketplace-api'
-
 
 options:
   logging: CLOUD_LOGGING_ONLY
