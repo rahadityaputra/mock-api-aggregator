@@ -28,7 +28,7 @@ steps:
       - '--set-env-vars'
       - 'NODE_ENV=production,JWT_SECRET=change-me,JWT_EXPIRES_IN=1d,WEBHOOK_BASE_URL=https://YOUR_DOMAIN,WEBHOOK_TIMEOUT_MS=5000'
       - '--set-secrets'
-      - 'DATABASE_URL=DATABASE_URL:latest'
+      - 'DATABASE_URL=DATABASE_URL:latest,INTERNAL_API_KEY=INTERNAL_API_KEY:latest'
 images:
   - 'gcr.io/$PROJECT_ID/mock-marketplace-api'
 
