@@ -11,10 +11,16 @@ import openApiSpec from "./docs/openapi.js";
 
 const app = express();
 
-// Keep the mock API permissive so it behaves like a local marketplace sandbox.
+// CORS_MARKETPLACE_ORIGIN can be a comma-separated list of origins or "*" for open access.
+const rawCorsOrigin = process.env.CORS_MARKETPLACE_ORIGIN || "*";
+const corsOrigin =
+    rawCorsOrigin === "*"
+        ? "*"
+        : rawCorsOrigin.split(",").map((o) => o.trim());
+
 app.use(
     cors({
-        origin: "*",
+        origin: corsOrigin,
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allowedHeaders: [
             "Content-Type",
@@ -23,7 +29,7 @@ app.use(
             "X-Webhook-Secret",
             "X-Internal-Secret",
         ],
-        credentials: false,
+        credentials: corsOrigin !== "*",
     }),
 );
 
