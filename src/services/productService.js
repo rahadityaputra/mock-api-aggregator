@@ -1,121 +1,127 @@
+import { prisma } from '../prisma/client.js';
+import { notFound, badRequest } from '../utils/errors.js';
 import {
-  productStores,
-  getProductIdField,
-  getSkuField,
-} from '../models/Product.js';
-import { MARKETPLACES } from '../config/constants.js';
+  archiveProductRecord,
+  createProductRecord,
+  findProductById,
+  findProductByInternalSku,
+  findProductByMarketplaceSku,
+  listMarketplaceProducts,
+  replaceProductImages,
+  updateProductRecord,
+  countMarketplaceProducts,
+} from '../repositories/productRepository.js';
+import { serializeProduct, normalizeMarketplace } from '../utils/marketplace.js';
 
-/**
- * Validates that the marketplace identifier is one of the supported platforms.
- * @param {string} marketplace
- * @throws {Error} 400 if marketplace is invalid
- */
-const validateMarketplace = (marketplace) => {
-  if (!Object.values(MARKETPLACES).includes(marketplace)) {
-    const err = new Error(
-      `Marketplace tidak didukung!"${marketplace}". Valid options: shopee, tokopedia, lazada`
-    );
-    err.status = 400;
-    throw err;
-  }
+const buildPagination = (page, limit) => ({
+  skip: (page - 1) * limit,
+  take: limit,
+});
+
+export const listProducts = async (marketplace, query = {}) => {
+  const normalized = normalizeMarketplace(marketplace);
+  const page = Math.max(Number(query.page || 1), 1);
+  const limit = Math.min(Math.max(Number(query.limit || 20), 1), 100);
+  const filters = {
+    ...buildPagination(page, limit),
+    search: query.search || undefined,
+    category: query.category || undefined,
+    status: query.status ? String(query.status).toUpperCase() : 'ACTIVE',
+    minPrice: query.minPrice !== undefined ? Number(query.minPrice) : undefined,
+    maxPrice: query.maxPrice !== undefined ? Number(query.maxPrice) : undefined,
+  };
+
+  const [items, total] = await Promise.all([
+    listMarketplaceProducts(normalized, filters),
+    countMarketplaceProducts(normalized, filters),
+  ]);
+
+  return {
+    items: items.map(serializeProduct),
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit),
+    },
+  };
 };
 
-/**
- * List all products for a given marketplace with optional filtering and pagination.
- *
- * @param {string} marketplace
- * @param {object} queryParams - { page, limit, category, search, minPrice, maxPrice }
- * @returns {{ products: Array, total: number, page: number, limit: number }}
- */
-export const listProducts = (marketplace, queryParams = {}) => {
-  validateMarketplace(marketplace);
+export const getProduct = async (marketplace, productId) => {
+  const normalized = normalizeMarketplace(marketplace);
+  const product = await findProductById(productId);
 
-  const store = productStores[marketplace];
-  const {
-    page = 1,
-    limit = 20,
-    category,
-    search,
-    minPrice,
-    maxPrice,
-  } = queryParams;
-
-  const pageNum = Math.max(1, parseInt(page, 10));
-  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
-
-  const nameField = marketplace === 'shopee' ? 'item_name' : 'name';
-  const priceField = 'price';
-  const categoryField = marketplace === 'lazada' ? 'primary_category' : 'category';
-
-  let filtered = [...store];
-
-  // Filter by category
-  if (category) {
-    filtered = filtered.filter(
-      (p) => p[categoryField]?.toLowerCase() === category.toLowerCase()
-    );
+  if (!product || product.marketplace !== normalized) {
+    throw notFound('Product not found');
   }
 
-  // Filter by search term (matches name or SKU)
-  if (search) {
-    const skuField = getSkuField(marketplace);
-    const term = search.toLowerCase();
-    filtered = filtered.filter(
-      (p) =>
-        p[nameField]?.toLowerCase().includes(term) ||
-        p[skuField]?.toLowerCase().includes(term)
-    );
-  }
-
-  // Filter by price range
-  if (minPrice !== undefined) {
-    filtered = filtered.filter((p) => p[priceField] >= Number(minPrice));
-  }
-  if (maxPrice !== undefined) {
-    filtered = filtered.filter((p) => p[priceField] <= Number(maxPrice));
-  }
-
-  const total = filtered.length;
-  const start = (pageNum - 1) * limitNum;
-  const products = filtered.slice(start, start + limitNum);
-
-  return { products, total, page: pageNum, limit: limitNum };
+  return serializeProduct(product);
 };
 
-/**
- * Get a single product by its marketplace-native ID.
- *
- * @param {string} marketplace
- * @param {string} productId - The value of item_id / product_id / id
- * @returns {object} Product record
- * @throws {Error} 404 if not found
- */
-export const getProductById = (marketplace, productId) => {
-  validateMarketplace(marketplace);
+export const createProduct = async (productData) => {
+  const [existingMarketplaceSku, existingInternalSku] = await Promise.all([
+    findProductByMarketplaceSku(productData.marketplace, productData.marketplace_sku),
+    findProductByInternalSku(productData.marketplace, productData.internal_sku),
+  ]);
 
-  const store = productStores[marketplace];
-  const idField = getProductIdField(marketplace);
-
-  const product = store.find((p) => p[idField] === productId);
-
-  if (!product) {
-    const err = new Error(`Product dengan ID"${productId}" tidak ditemukan di ${marketplace}`);
-    err.status = 404;
-    throw err;
+  if (existingMarketplaceSku) {
+    throw badRequest('marketplace_sku already exists for this marketplace');
   }
 
-  return product;
+  if (existingInternalSku) {
+    throw badRequest('internal_sku already exists for this marketplace');
+  }
+
+  const product = await createProductRecord(productData);
+  return serializeProduct(product);
 };
 
-/**
- * Get a single product by its marketplace-native SKU.
- *
- * @param {string} marketplace
- * @param {string} sku
- * @returns {object|null} Product record or null
- */
-export const getProductBySku = (marketplace, sku) => {
-  const store = productStores[marketplace];
-  const skuField = getSkuField(marketplace);
-  return store.find((p) => p[skuField] === sku) || null;
+export const updateProduct = async (marketplace, productId, updateData) => {
+  const normalized = normalizeMarketplace(marketplace);
+  const product = await findProductById(productId);
+
+  if (!product || product.marketplace !== normalized) {
+    throw notFound('Product not found');
+  }
+
+  const { images, ...productFields } = updateData;
+
+  const updated = await prisma.$transaction(async (tx) => {
+    if (Object.keys(productFields).length > 0) {
+      await updateProductRecord(productId, productFields, tx);
+    }
+
+    if (images !== undefined) {
+      await replaceProductImages(productId, images, tx);
+    }
+
+    return findProductById(productId, tx);
+  });
+
+  return serializeProduct(updated);
+};
+
+export const deleteProduct = async (marketplace, productId) => {
+  const normalized = normalizeMarketplace(marketplace);
+  const product = await findProductById(productId);
+
+  if (!product || product.marketplace !== normalized) {
+    throw notFound('Product not found');
+  }
+
+  const archived = await archiveProductRecord(productId);
+  return serializeProduct(archived);
+};
+
+export const updateProductStock = async (marketplace, productId, stockData) => {
+  const normalized = normalizeMarketplace(marketplace);
+  const product = await findProductById(productId);
+
+  if (!product || product.marketplace !== normalized) {
+    throw notFound('Product not found');
+  }
+
+  const updated = await updateProductRecord(productId, { stock: stockData.stock });
+
+  return serializeProduct(updated);
 };

@@ -1,106 +1,71 @@
-import * as productService from '../services/productService.js';
-import { sendSuccess, sendPaginated, sendError } from '../utils/responses.js';
-import { errorSimulation } from '../models/WebhookConfig.js';
+import {
+  createProduct as createProductService,
+  deleteProduct as deleteProductService,
+  getProduct as getProductService,
+  listProducts as listProductsService,
+  updateProduct as updateProductService,
+  updateProductStock as updateProductStockService,
+} from '../services/productService.js';
 
-/**
- * GET /api/:marketplace/products
- * List all products for a marketplace with optional filters.
- *
- * Query params: page, limit, category, search, minPrice, maxPrice
- */
-export const listProducts = (req, res, next) => {
+export const listProducts = async (req, res, next) => {
   try {
-    const { marketplace } = req.params;
-
-    const simError = checkSimulatedError(marketplace, res);
-    if (simError) return;
-
-    const { products, total, page, limit } = productService.listProducts(
-      marketplace,
-      req.query
-    );
-
-    return sendPaginated(
-      res,
-      products,
-      total,
-      page,
-      limit,
-      `Produk berhasil diambil dari ${marketplace}`
-    );
-  } catch (err) {
-    next(err);
+    const data = await listProductsService(req.marketplace, req.query);
+    res.status(200).json({ success: true, ...data });
+  } catch (error) {
+    next(error);
   }
 };
 
-/**
- * GET /api/:marketplace/products/:id
- * Get a single product by its marketplace-native ID.
- */
-export const getProduct = (req, res, next) => {
+export const getProduct = async (req, res, next) => {
   try {
-    const { marketplace, id } = req.params;
-
-    const simError = checkSimulatedError(marketplace, res);
-    if (simError) return;
-
-    const product = productService.getProductById(marketplace, id);
-    return sendSuccess(res, { product }, `Produk berhasil diambil dari ${marketplace}`);
-  } catch (err) {
-    next(err);
+    const product = await getProductService(req.marketplace, req.params.id);
+    res.status(200).json({ success: true, product });
+  } catch (error) {
+    next(error);
   }
 };
 
-// ─── Internal Helpers ─────────────────────────────────────────────────────────
+export const createProduct = async (req, res, next) => {
+  try {
+    console.log('[PRODUCT_CREATE_REQUEST]', {
+      marketplace: req.marketplace,
+      body: req.body,
+    });
 
-/**
- * Inspect the error simulation mode for a marketplace and respond accordingly.
- * Returns true if a simulated error was sent (caller should stop processing).
- *
- * @param {string} marketplace
- * @param {object} res 
- * @returns {boolean}
- */
-const checkSimulatedError = (marketplace, res) => {
-  const mode = errorSimulation[marketplace];
+    const product = await createProductService({
+      ...req.validatedBody,
+      marketplace: req.marketplace,
+    });
 
-  switch (mode) {
-    case 'rate_limit':
-      res.status(429).json({
-        success: false,
-        message: '[SIMULATED] Rate limit exceeded. Too many requests.',
-        retryAfter: 60,
-        timestamp: new Date().toISOString(),
-      });
-      return true;
-
-    case 'timeout':
-      res.status(503).json({
-        success: false,
-        message: '[SIMULATED] Request timed out. Please try again.',
-        timestamp: new Date().toISOString(),
-      });
-      return true;
-
-    case 'server_error':
-      res.status(500).json({
-        success: false,
-        message: '[SIMULATED] Internal server error from marketplace.',
-        timestamp: new Date().toISOString(),
-      });
-      return true;
-
-    case 'auth_failure':
-      res.status(401).json({
-        success: false,
-        message: '[SIMULATED] Authentication token invalid or expired.',
-        timestamp: new Date().toISOString(),
-      });
-      return true;
-
-    default:
-      return false;
+    res.status(201).json({ success: true, product });
+  } catch (error) {
+    next(error);
   }
 };
 
-export { checkSimulatedError };
+export const updateProduct = async (req, res, next) => {
+  try {
+    const product = await updateProductService(req.marketplace, req.params.id, req.validatedBody);
+    res.status(200).json({ success: true, product });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteProduct = async (req, res, next) => {
+  try {
+    const product = await deleteProductService(req.marketplace, req.params.id);
+    res.status(200).json({ success: true, product });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateProductStock = async (req, res, next) => {
+  try {
+    const product = await updateProductStockService(req.marketplace, req.params.id, req.validatedBody);
+    res.status(200).json({ success: true, product });
+  } catch (error) {
+    next(error);
+  }
+};

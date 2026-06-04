@@ -1,8 +1,12 @@
 import 'dotenv/config';
-import app from './src/app.js';
 
-const PORT = parseInt(process.env.PORT || '4000', 10);
+import app from './src/app.js';
+import { connectDatabase } from './src/config/database.js';
+
+const PORT = parseInt(process.env.PORT || '3000', 10);
 const HOST = process.env.HOST || '0.0.0.0';
+
+await connectDatabase();
 
 const server = app.listen(PORT, HOST, () => {
   const divider = '─'.repeat(60);
@@ -13,12 +17,15 @@ const server = app.listen(PORT, HOST, () => {
   console.log(`  Status    : Running`);
   console.log(`  Base URL  : http://localhost:${PORT}/api`);
   console.log(`  Health    : http://localhost:${PORT}/health`);
+  console.log(`  Webhooks  : http://localhost:${PORT}/api/webhooks/:marketplace`);
   console.log(`  Markets   : shopee  |  tokopedia  |  lazada`);
   console.log(`  Env       : ${process.env.NODE_ENV || 'development'}`);
   console.log(`${divider}\n`);
 
   console.log('  Endpoints:');
   console.log(`  POST  http://localhost:${PORT}/api/auth/login`);
+  console.log(`  POST  http://localhost:${PORT}/api/auth/register`);
+  console.log(`  GET   http://localhost:${PORT}/api/auth/me`);
   console.log(`  GET   http://localhost:${PORT}/api/shopee/products`);
   console.log(`  GET   http://localhost:${PORT}/api/tokopedia/products`);
   console.log(`  GET   http://localhost:${PORT}/api/lazada/products`);

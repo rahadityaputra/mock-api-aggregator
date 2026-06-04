@@ -1,133 +1,85 @@
 import axios from 'axios';
-import { webhookConfigs } from '../models/WebhookConfig.js';
-import { WEBHOOK_EVENTS } from '../config/constants.js';
 
-const WEBHOOK_TIMEOUT_MS = parseInt(process.env.WEBHOOK_TIMEOUT_MS || '5000', 10);
+import { DEFAULT_WEBHOOK_BASE_URL, ERROR_TYPES } from '../config/constants.js';
+import { createWebhookLog } from '../repositories/webhookLogRepository.js';
+import { buildWebhookPayload, normalizeMarketplace } from '../utils/marketplace.js';
+import { consumeMarketplaceSimulation } from './simulationService.js';
 
-/**
- * Build the standard webhook payload envelope.
- *
- * @param {string} marketplace
- * @param {string} event       - WEBHOOK_EVENTS constant
- * @param {object} data        - Event-specific data
- * @returns {object} Payload ready to POST
- */
-const buildPayload = (marketplace, event, data) => ({
-  event,
-  marketplace,
-  timestamp: new Date().toISOString(),
-  data,
-});
+const webhookTimeout = Number(process.env.WEBHOOK_TIMEOUT_MS || 5000);
 
-/**
- * Deliver a webhook to the configured URL for a marketplace.
- * Errors are caught and logged — they do not bubble up to the caller.
- *
- * @param {string} marketplace
- * @param {string} event
- * @param {object} data
- * @returns {Promise<{ delivered: boolean, statusCode?: number, error?: string }>}
- */
-export const deliverWebhook = async (marketplace, event, data) => {
-  const config = webhookConfigs[marketplace];
+export const recordWebhookLog = async (data) => createWebhookLog(data);
 
-  if (!config || !config.enabled || !config.url) {
-    console.log(`[WEBHOOK] Skipped: No enabled config for ${marketplace}`);
-    return { delivered: false, error: 'No webhook URL configured' };
+export const sendOrderWebhook = async (order, item, product) => {
+  const marketplace = normalizeMarketplace(order.marketplace);
+  const simulation = consumeMarketplaceSimulation(marketplace);
+
+  const payload = buildWebhookPayload(order, item, product);
+  const webhookUrl = `${DEFAULT_WEBHOOK_BASE_URL}/${marketplace}`;
+
+  console.log(`[WEBHOOK_SENDING] Sending ORDER_CREATED webhook to ${marketplace.toUpperCase()} - URL: ${webhookUrl}`, { payload });
+
+  if (simulation?.type === ERROR_TYPES.WEBHOOK_FAILED) {
+    console.warn(`[WEBHOOK_SIMULATED_FAILURE] Simulated failure requested for ${marketplace.toUpperCase()}`);
+    await recordWebhookLog({
+      marketplace,
+      event_type: 'ORDER_CREATED',
+      payload,
+      status: 'FAILED',
+    });
+
+    return { status: 'FAILED', reason: 'Webhook simulation requested failure', webhookUrl };
   }
 
-  // Only fire if the event is subscribed to
-  if (config.events && !config.events.includes(event)) {
-    console.log(`[WEBHOOK] Skipped: Event "${event}" not in subscription list for ${marketplace}`);
-    return { delivered: false, error: `Event "${event}" not subscribed` };
+  if (simulation?.type === ERROR_TYPES.TIMEOUT) {
+    console.warn(`[WEBHOOK_SIMULATED_TIMEOUT] Simulated timeout requested for ${marketplace.toUpperCase()}`);
+    await recordWebhookLog({
+      marketplace,
+      event_type: 'ORDER_CREATED',
+      payload,
+      status: 'TIMEOUT',
+    });
+
+    return { status: 'TIMEOUT', reason: 'Webhook request timed out by simulation', webhookUrl };
   }
-
-  const payload = buildPayload(marketplace, event, data);
-
-  console.log(`[WEBHOOK] Delivering "${event}" to ${config.url} for ${marketplace}...`);
 
   try {
-    const response = await axios.post(config.url, payload, {
-      timeout: WEBHOOK_TIMEOUT_MS,
+    const response = await axios.post(webhookUrl, payload, {
+      timeout: webhookTimeout,
       headers: {
         'Content-Type': 'application/json',
-        'X-Marketplace': marketplace,
-        'X-Webhook-Event': event,
-        'X-Webhook-Secret': config.secret || '',
-        'User-Agent': 'MockMarketplaceAPI/1.0',
       },
     });
 
-    console.log(`[WEBHOOK] Delivered successfully. Status: ${response.status}`);
-    return { delivered: true, statusCode: response.status };
-  } catch (err) {
-    const statusCode = err.response?.status;
-    const errorMsg = err.message || 'Unknown webhook delivery error';
-    console.error(`[WEBHOOK] Delivery failed for ${marketplace}: ${errorMsg}`);
-    return { delivered: false, statusCode, error: errorMsg };
+    const status = response.status >= 200 && response.status < 300 ? 'SUCCESS' : 'FAILED';
+
+    console.log(`[WEBHOOK_SENT_SUCCESS] Webhook response received from ${marketplace.toUpperCase()} - Status: ${response.status}`);
+
+    await recordWebhookLog({
+      marketplace,
+      event_type: 'ORDER_CREATED',
+      payload,
+      status,
+    });
+
+    return { status, webhookUrl };
+  } catch (error) {
+    console.error(`[WEBHOOK_SENT_ERROR] Failed to send webhook to ${marketplace.toUpperCase()} - Error: ${error.message}`);
+    await recordWebhookLog({
+      marketplace,
+      event_type: 'ORDER_CREATED',
+      payload,
+      status: 'FAILED',
+    });
+
+    return { status: 'FAILED', reason: error.message, webhookUrl };
   }
 };
 
-/**
- * Fire the order.created webhook after a successful order.
- * Non-blocking — awaited internally but not by the caller.
- *
- * @param {string} marketplace
- * @param {object} order - The created order record
- */
-export const triggerOrderWebhook = (marketplace, order) => {
-  // Fire and forget — intentionally not awaited by the caller
-  deliverWebhook(marketplace, WEBHOOK_EVENTS.ORDER_CREATED, { order })
-    .catch((err) => {
-      console.error('[WEBHOOK] Unexpected error in triggerOrderWebhook:', err.message);
-    });
-};
+export const receiveWebhook = async (webhookData) => {
+  const log = await recordWebhookLog(webhookData);
 
-/**
- * Send a test webhook to verify the configured URL is reachable.
- *
- * @param {string} marketplace
- * @returns {Promise<object>} Delivery result
- */
-export const sendTestWebhook = async (marketplace) => {
-  const testData = {
-    message: 'This is a test webhook from the Mock Marketplace API',
-    marketplace,
-    sentAt: new Date().toISOString(),
+  return {
+    received: true,
+    log,
   };
-
-  return deliverWebhook(marketplace, WEBHOOK_EVENTS.TEST, testData);
-};
-
-/**
- * Update (or create) the webhook configuration for a marketplace.
- *
- * @param {string} marketplace
- * @param {object} configUpdate - { url, secret, events, enabled }
- * @returns {object} Updated config (without secret)
- */
-export const configureWebhook = (marketplace, configUpdate) => {
-  const current = webhookConfigs[marketplace] || {};
-
-  webhookConfigs[marketplace] = {
-    ...current,
-    ...configUpdate,
-    configuredAt: new Date().toISOString(),
-  };
-
-  const { secret, ...safeConfig } = webhookConfigs[marketplace];
-  return safeConfig;
-};
-
-/**
- * Get the current webhook config for a marketplace (without secret).
- *
- * @param {string} marketplace
- * @returns {object}
- */
-export const getWebhookConfig = (marketplace) => {
-  const config = webhookConfigs[marketplace];
-  if (!config) return null;
-  const { secret, ...safeConfig } = config;
-  return safeConfig;
 };

@@ -1,64 +1,86 @@
-import { Router } from 'express';
-import { listProducts, getProduct } from '../controllers/productController.js';
-import { createOrder, listOrders, getOrder } from '../controllers/orderController.js';
+import { Router } from "express";
+
 import {
-  updateStock,
-  bulkUpdateStock,
-  configureWebhook,
-  testWebhook,
-  resetMarketplace,
-  simulateError,
-  getStatus,
-} from '../controllers/stockController.js';
-import { authenticate } from '../middleware/authentication.js';
-import { sendError } from '../utils/responses.js';
+    createProduct,
+    deleteProduct,
+    getProduct,
+    listProducts,
+    updateProduct,
+    updateProductStock,
+} from "../controllers/productController.js";
+import {
+    createOrder,
+    getOrder,
+    listOrders,
+} from "../controllers/orderController.js";
+import { simulateError } from "../controllers/marketplaceController.js";
+import { authenticate } from "../middlewares/authentication.js";
+import { authorizeInternalRequest } from "../middlewares/internalAuthentication.js";
+import { validateRequest } from "../middlewares/validation.js";
+import {
+    validateOrderPayload,
+    validateProductCreatePayload,
+    validateProductUpdatePayload,
+    validateSimulationPayload,
+    validateStockUpdatePayload,
+} from "../validators/index.js";
+import { AppError } from "../utils/errors.js";
+import { normalizeMarketplace } from "../utils/marketplace.js";
 
 const router = Router({ mergeParams: true });
 
-router.param('marketplace', (req, res, next, value) => {
-  const valid = ['shopee', 'tokopedia', 'lazada'];
-  if (!valid.includes(value)) {
-    return sendError(
-      res,
-      `Invalid marketplace "${value}". Valid options: ${valid.join(', ')}`,
-      400
-    );
-  }
-  next();
+router.use((req, res, next) => {
+    try {
+        const { marketplace } = req.params;
+
+        if (!marketplace) {
+            throw new AppError(400, "Missing marketplace");
+        }
+
+        req.marketplace = normalizeMarketplace(marketplace);
+        return next();
+    } catch (error) {
+        error.status = 400;
+        next(error);
+    }
 });
 
-// ── Products
-// GET  /api/:marketplace/products         — List products (filterable, paginated)
-// GET  /api/:marketplace/products/:id     — Get product by marketplace-native ID
-router.get('/products', listProducts);
-router.get('/products/:id', getProduct);
+router.get("/products", listProducts);
+router.get("/products/:id", getProduct);
+router.post(
+    "/products",
+    authorizeInternalRequest,
+    validateRequest(validateProductCreatePayload),
+    createProduct,
+);
+router.patch(
+    "/products/:id",
+    authorizeInternalRequest,
+    validateRequest(validateProductUpdatePayload),
+    updateProduct,
+);
+router.delete("/products/:id", authorizeInternalRequest, deleteProduct);
+router.patch(
+    "/products/:id/stock",
+    authorizeInternalRequest,
+    validateRequest(validateStockUpdatePayload),
+    updateProductStock,
+);
 
-// ── Orders
-// POST /api/:marketplace/orders           — Create order (auth required)
-// GET  /api/:marketplace/orders           — List user's orders (auth required)
-// GET  /api/:marketplace/orders/:id       — Get specific order (auth required)
-router.post('/orders', authenticate, createOrder);
-router.get('/orders', authenticate, listOrders);
-router.get('/orders/:id', authenticate, getOrder);
+router.post(
+    "/orders",
+    authenticate,
+    validateRequest(validateOrderPayload),
+    createOrder,
+);
+router.get("/my-orders", authenticate, listOrders);
+router.get("/orders/:id", authenticate, getOrder);
 
-// ── Stock Management
-// PUT  /api/:marketplace/stock/bulk       — Bulk stock update (MUST be before /:sku)
-// PUT  /api/:marketplace/stock/:sku       — Single SKU stock update
-router.put('/stock/bulk', authenticate, bulkUpdateStock);
-router.put('/stock/:sku', authenticate, updateStock);
-
-// ── Webhook
-// POST /api/:marketplace/webhook/config   — Set webhook URL + options
-// POST /api/:marketplace/webhook/test     — Fire test webhook
-router.post('/webhook/config', authenticate, configureWebhook);
-router.post('/webhook/test', authenticate, testWebhook);
-
-// ── Marketplace Operations 
-// POST /api/:marketplace/reset            — Reset all data to seed state
-// POST /api/:marketplace/simulate-error  — Enable/disable error simulation
-// GET  /api/:marketplace/status           — Health/status of marketplace
-router.post('/reset', resetMarketplace);
-router.post('/simulate-error', simulateError);
-router.get('/status', getStatus);
+router.post(
+    "/simulate-error",
+    authenticate,
+    validateRequest(validateSimulationPayload),
+    simulateError,
+);
 
 export default router;

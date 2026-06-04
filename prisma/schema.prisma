@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+
+  orders    Order[]
+
+  @@map("users")
+}
+
+model Product {
+  id              String        @id @default(cuid())
+  marketplace     String
+  product_name    String
+  marketplace_sku String
+  internal_sku    String
+  description     String?
+  category        String
+  brand           String?
+  price           Int
+  stock           Int
+  weight          Float
+  thumbnail_url   String?
+  status          ProductStatus  @default(ACTIVE)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  orderItems      OrderItem[]
+  images          ProductImage[]
+
+  @@unique([marketplace, marketplace_sku])
+  @@unique([marketplace, internal_sku])
+  @@index([marketplace])
+  @@index([marketplace_sku])
+  @@index([internal_sku])
+  @@index([marketplace, category])
+  @@index([marketplace, status])
+  @@map("products")
+}
+
+enum ProductStatus {
+  ACTIVE
+  DRAFT
+  ARCHIVED
+}
+
+model ProductImage {
+  id         String   @id @default(cuid())
+  product_id String
+  image_url  String
+  createdAt  DateTime @default(now())
+
+  product    Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@index([product_id])
+  @@map("product_images")
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  marketplace String
+  order_code  String      @unique
+  user_id     String
+  status      String      @default("PENDING")
+  total_price Int
+  createdAt   DateTime    @default(now())
+
+  user        User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  items       OrderItem[]
+
+  @@index([marketplace])
+  @@index([user_id])
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  order_id   String
+  product_id String
+  quantity   Int
+  price      Int
+
+  order      Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [product_id], references: [id], onDelete: Restrict)
+
+  @@index([order_id])
+  @@index([product_id])
+  @@map("order_items")
+}
+
+model WebhookLog {
+  id          String   @id @default(cuid())
+  marketplace String
+  event_type  String
+  payload     Json
+  status      String
+  createdAt   DateTime @default(now())
+
+  @@index([marketplace])
+  @@map("webhook_logs")
+}

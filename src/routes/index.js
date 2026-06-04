@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import authRoutes from './auth.js';
 import marketplaceRoutes from './marketplace.js';
+import webhookRoutes from './webhooks.js';
 
 const router = Router();
 
@@ -22,5 +23,8 @@ router.use('/auth', authRoutes);
 
 // /api/:marketplace/* (shopee | tokopedia | lazada)
 router.use('/:marketplace', marketplaceRoutes);
+
+// /api/webhooks/:marketplace
+router.use('/webhooks', webhookRoutes);
 
 export default router;

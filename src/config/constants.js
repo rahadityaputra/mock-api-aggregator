@@ -1,79 +1,58 @@
-// Marketplace Identifiers
-export const MARKETPLACES = {
-  SHOPEE: 'shopee',
-  TOKOPEDIA: 'tokopedia',
-  LAZADA: 'lazada',
+export const MARKETPLACES = ['shopee', 'tokopedia', 'lazada'];
+
+export const MARKETPLACE_LABELS = {
+  shopee: 'Shopee',
+  tokopedia: 'Tokopedia',
+  lazada: 'Lazada',
 };
 
-// Mapping
-export const FIELD_MAP = {
+export const PRODUCT_STATUSES = ['ACTIVE', 'DRAFT', 'ARCHIVED'];
+
+export const PRODUCT_IMAGE_RULES = {
+  maxCount: 5,
+  maxSizeBytes: 5 * 1024 * 1024,
+  allowedExtensions: ['.jpg', '.jpeg', '.png', '.webp'],
+  allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+};
+
+export const MARKETPLACE_META = {
   shopee: {
-    productId: 'item_id',
-    sku: 'model_sku',
-    skuPrefix: 'SHP',
-    name: 'item_name',
-    price: 'price',
-    stock: 'stock',
-    description: 'description',
-    category: 'category',
-    images: 'images',
-    rating: 'item_rating',
-    sold: 'historical_sold',
-    shop: 'shopid',
+    code: 'SP',
+    productNameKey: 'item_name',
+    skuKey: 'model_sku',
+    stockKey: 'stock',
+    orderQtyKey: 'qty',
+    orderPayloadSkuKey: 'model_sku',
   },
   tokopedia: {
-    productId: 'product_id',
-    sku: 'sku',
-    skuPrefix: 'TOK',
-    name: 'name',
-    price: 'price',
-    stock: 'stock',
-    description: 'description',
-    category: 'category',
-    images: 'images',
-    rating: 'rating',
-    sold: 'sold',
-    shop: 'shop_id',
+    code: 'TK',
+    productNameKey: 'name',
+    skuKey: 'sku',
+    stockKey: 'stock',
+    orderQtyKey: 'quantity',
+    orderPayloadSkuKey: 'sku',
   },
   lazada: {
-    productId: 'id',
-    sku: 'seller_sku',
-    skuPrefix: 'LZD',
-    name: 'name',
-    price: 'price',
-    stock: 'available',
-    description: 'description',
-    category: 'primary_category',
-    images: 'images',
-    rating: 'rating_score',
-    sold: 'sold_count',
-    shop: 'seller_id',
+    code: 'LZ',
+    productNameKey: 'title',
+    skuKey: 'seller_sku',
+    stockKey: 'quantity',
+    orderQtyKey: 'quantity',
+    orderPayloadSkuKey: 'seller_sku',
   },
 };
 
-export const HTTP_STATUS = {
-  OK: 200,
-  CREATED: 201,
-  BAD_REQUEST: 400,
-  UNAUTHORIZED: 401,
-  FORBIDDEN: 403,
-  NOT_FOUND: 404,
-  CONFLICT: 409,
-  UNPROCESSABLE: 422,
-  INTERNAL_ERROR: 500,
-  SERVICE_UNAVAILABLE: 503,
+
+export const ERROR_TYPES = {
+  STOCK_FAILED: 'STOCK_FAILED',
+  WEBHOOK_FAILED: 'WEBHOOK_FAILED',
+  TIMEOUT: 'TIMEOUT',
 };
 
-export const ERROR_MODES = {
-  NONE: 'none',
-  RATE_LIMIT: 'rate_limit',
-  TIMEOUT: 'timeout',
-  SERVER_ERROR: 'server_error',
-  AUTH_FAILURE: 'auth_failure',
+export const ORDER_STATUS = {
+  PENDING: 'PENDING',
+  CONFIRMED: 'CONFIRMED',
+  FAILED: 'FAILED',
 };
 
-export const WEBHOOK_EVENTS = {
-  ORDER_CREATED: 'order.created',
-  STOCK_UPDATED: 'stock.updated',
-  TEST: 'webhook.test',
-};
+export const DEFAULT_WEBHOOK_BASE_URL = process.env.WEBHOOK_BASE_URL || 'http://localhost:3000/api/v1/webhooks';

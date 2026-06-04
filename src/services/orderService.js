@@ -1,149 +1,101 @@
-import { orders, createOrder } from '../models/Order.js';
-import { productStores, getProductIdField, getSkuField, getStockField } from '../models/Product.js';
-import { triggerOrderWebhook } from './webhookService.js';
-import { MARKETPLACES } from '../config/constants.js';
+import { prisma } from '../prisma/client.js';
+import { badRequest, notFound } from '../utils/errors.js';
+import { countOrdersByMarketplace, findOrderById, listOrdersByUser } from '../repositories/orderRepository.js';
+import { findProductByMarketplaceSku } from '../repositories/productRepository.js';
+import { ORDER_STATUS, ERROR_TYPES } from '../config/constants.js';
+import { generateOrderCode, normalizeMarketplace, serializeOrder } from '../utils/marketplace.js';
+import { sendOrderWebhook } from './webhookService.js';
+import { getSimulationStore } from './simulationService.js';
 
-/**
- * Create a new order for a marketplace product.
- *
- * Flow:
- *  1. Validate marketplace
- *  2. Locate the product by its native ID
- *  3. Check sufficient stock
- *  4. Persist the order
- *  5. Decrement stock in the product store
- *  6. Fire webhook (non-blocking)
- *
- * @param {string} marketplace
- * @param {string} userId
- * @param {object} body - { productId, quantity, shippingAddress }
- * @returns {object} Created order record
- */
-export const placeOrder = (marketplace, userId, body) => {
-  if (!Object.values(MARKETPLACES).includes(marketplace)) {
-    const err = new Error(`Marketplace tidak valid: ${marketplace}`);
-    err.status = 400;
-    throw err;
+export const createOrder = async ({ marketplace, userId, marketplace_sku, quantity }) => {
+  const normalized = normalizeMarketplace(marketplace);
+  const simulationStore = getSimulationStore();
+  const simulation = simulationStore.get(normalized);
+
+  if (simulation?.type === ERROR_TYPES.STOCK_FAILED) {
+    simulationStore.delete(normalized);
+    throw badRequest('Stock failure simulation triggered');
   }
 
-  const { productId, quantity, shippingAddress = {} } = body;
-
-  // Validate inputs 
-  if (!productId) {
-    const err = new Error('productId tidak ditemukan');
-    err.status = 400;
-    throw err;
+  if (!Number.isInteger(quantity) || quantity <= 0) {
+    throw badRequest('Quantity must be a positive integer');
   }
 
-  const qty = parseInt(quantity, 10);
-  if (!quantity || qty < 1 || isNaN(qty)) {
-    const err = new Error('Quantity harus valid.');
-    err.status = 400;
-    throw err;
+  const product = await findProductByMarketplaceSku(normalized, marketplace_sku);
+
+  if (!product || product.status !== 'ACTIVE') {
+    throw notFound('Product not found for this marketplace SKU');
   }
 
-  // Locate product 
-  const store = productStores[marketplace];
-  const idField = getProductIdField(marketplace);
-  const skuField = getSkuField(marketplace);
-  const stockField = getStockField(marketplace);
-
-  const product = store.find((p) => p[idField] === productId);
-  if (!product) {
-    const err = new Error(`Produk "${productId}" tidak ditemukan di ${marketplace}`);
-    err.status = 404;
-    throw err;
+  if (product.stock < quantity) {
+    throw badRequest('Insufficient stock');
   }
 
-  // Check stock 
-  const currentStock = product[stockField];
-  if (currentStock < qty) {
-    const err = new Error(
-      `Stock tidak cukup. Permintaan anda: ${qty}, Stock tersedia: ${currentStock}`
-    );
-    err.status = 422;
-    throw err;
-  }
+  const order = await prisma.$transaction(async (tx) => {
+    const orderCount = await countOrdersByMarketplace(normalized, tx);
+    const orderCode = generateOrderCode(normalized, orderCount + 1);
+    const totalPrice = product.price * quantity;
 
-  const productName = product.item_name || product.name;
+    const createdOrder = await tx.order.create({
+      data: {
+        marketplace: normalized,
+        order_code: orderCode,
+        user_id: userId,
+        status: ORDER_STATUS.CONFIRMED,
+        total_price: totalPrice,
+        items: {
+          create: [
+            {
+              product_id: product.id,
+              quantity,
+              price: product.price,
+            },
+          ],
+        },
+      },
+      include: {
+        items: {
+          include: {
+            product: true,
+          },
+        },
+      },
+    });
 
-  const order = createOrder({
-    marketplace,
-    userId,
-    productId,
-    sku: product[skuField],
-    productName,
-    quantity: qty,
-    unitPrice: product.price,
-    shippingAddress,
+    await tx.product.update({
+      where: { id: product.id },
+      data: {
+        stock: product.stock - quantity,
+      },
+    });
+
+    return createdOrder;
   });
 
-  orders.push(order);
+  const createdItem = order.items[0];
 
-  product[stockField] -= qty;
-  product.updatedAt = new Date().toISOString();
+  const webhookResult = await sendOrderWebhook(order, createdItem, createdItem.product);
 
-  console.log(
-    `[ORDER] Dibuat: ${order.marketplace_order_id} | ${marketplace} | qty:${qty} | stock:${currentStock}→${product[stockField]}`
-  );
-
-  // Trigger webhook (fire & forget) 
-  triggerOrderWebhook(marketplace, order);
-
-  return order;
+  return {
+    order: serializeOrder(order),
+    webhook: webhookResult,
+  };
 };
 
-/**
- * List all orders for a specific user in a marketplace.
- *
- * @param {string} marketplace
- * @param {string} userId
- * @param {object} queryParams - { page, limit, status }
- * @returns {{ orders: Array, total: number, page: number, limit: number }}
- */
-export const getUserOrders = (marketplace, userId, queryParams = {}) => {
-  const { page = 1, limit = 20, status } = queryParams;
+export const getMyOrders = async (userId, marketplace) => {
+  const normalized = marketplace ? normalizeMarketplace(marketplace) : null;
+  const orders = await listOrdersByUser(userId, normalized);
 
-  const pageNum = Math.max(1, parseInt(page, 10));
-  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
-
-  let filtered = orders.filter(
-    (o) => o.marketplace === marketplace && o.userId === userId
-  );
-
-  if (status) {
-    filtered = filtered.filter((o) => o.status === status);
-  }
-
-  // Most recent first
-  filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-  const total = filtered.length;
-  const start = (pageNum - 1) * limitNum;
-  const paged = filtered.slice(start, start + limitNum);
-
-  return { orders: paged, total, page: pageNum, limit: limitNum };
+  return orders.map(serializeOrder);
 };
 
-/**
- * Get a specific order by its ID, scoped to marketplace and user.
- *
- * @param {string} marketplace
- * @param {string} userId
- * @param {string} orderId
- * @returns {object} Order record
- * @throws {Error} 404 if not found or not owned by user
- */
-export const getOrderById = (marketplace, userId, orderId) => {
-  const order = orders.find(
-    (o) => o.id === orderId && o.marketplace === marketplace && o.userId === userId
-  );
+export const getOrderById = async (userId, orderId, marketplace) => {
+  const normalized = normalizeMarketplace(marketplace);
+  const order = await findOrderById(orderId);
 
-  if (!order) {
-    const err = new Error(`Pesanan "${orderId}" tidak ditemukan`);
-    err.status = 404;
-    throw err;
+  if (!order || order.user_id !== userId || order.marketplace !== normalized) {
+    throw notFound('Order not found');
   }
 
-  return order;
+  return serializeOrder(order);
 };

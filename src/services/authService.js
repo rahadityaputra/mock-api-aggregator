@@ -1,84 +1,58 @@
-import bcrypt from 'bcryptjs';
-import { users, createUser, sanitizeUser } from '../models/User.js';
-import { generateToken } from '../utils/jwt.js';
+import bcrypt from 'bcrypt';
 
-/**
- * Register a new user account.
- *
- * @param {object} data - { email, username, password, name }
- * @returns {{ user: object, token: string }}
- * @throws {Error} If email or username already taken
- */
-export const registerUser = async ({ email, username, password, name }) => {
-  if (users.find((u) => u.email === email.toLowerCase().trim())) {
-    const err = new Error('Email sudah dipakai');
-    err.status = 409;
-    throw err;
+import { conflict, unauthorized } from '../utils/errors.js';
+import { signToken } from '../utils/jwt.js';
+import { createUser, findUserByEmail, findUserById } from '../repositories/userRepository.js';
+
+const safeUser = (user) => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  createdAt: user.createdAt,
+});
+
+export const registerUser = async ({ name, email, password }) => {
+  const existing = await findUserByEmail(email);
+
+  if (existing) {
+    throw conflict('Email already registered');
   }
 
-  if (users.find((u) => u.username === username.toLowerCase().trim())) {
-    const err = new Error('Username sudah dipakai');
-    err.status = 409;
-    throw err;
-  }
-  if (password.length < 6) {
-    const err = new Error('Password harus minimal 6 karakter');
-    err.status = 400;
-    throw err;
-  }
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const user = await createUser({ name, email, password: hashedPassword });
+  const token = signToken({ id: user.id, email: user.email });
 
-  const newUser = await createUser({ email, username, password, name });
-  users.push(newUser);
-
-  const token = generateToken({ id: newUser.id, email: newUser.email, role: newUser.role });
-
-  return { user: sanitizeUser(newUser), token };
+  return {
+    user: safeUser(user),
+    token,
+  };
 };
 
-/**
- * Authenticate a user with email + password credentials.
- *
- * @param {string} email
- * @param {string} password
- * @returns {{ user: object, token: string }}
- * @throws {Error} If credentials are invalid
- */
-export const loginUser = async (email, password) => {
-  const user = users.find((u) => u.email === email.toLowerCase().trim());
+export const loginUser = async ({ email, password }) => {
+  const user = await findUserByEmail(email);
 
   if (!user) {
-    const err = new Error('Email atau password salah');
-    err.status = 401;
-    throw err;
+    throw unauthorized('Invalid email or password');
   }
 
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
-    const err = new Error('Email atau password salah');
-    err.status = 401;
-    throw err;
+  const valid = await bcrypt.compare(password, user.password);
+
+  if (!valid) {
+    throw unauthorized('Invalid email or password');
   }
 
-  const token = generateToken({ id: user.id, email: user.email, role: user.role });
-
-  return { user: sanitizeUser(user), token };
+  return {
+    user: safeUser(user),
+    token: signToken({ id: user.id, email: user.email }),
+  };
 };
 
-/**
- * Get the current authenticated user's profile.
- *
- * @param {string} userId
- * @returns {object} Sanitized user record
- * @throws {Error} If user not found
- */
-export const getCurrentUser = (userId) => {
-  const user = users.find((u) => u.id === userId);
+export const getAuthenticatedUser = async (userId) => {
+  const user = await findUserById(userId);
 
   if (!user) {
-    const err = new Error('User tidak ditemukan');
-    err.status = 404;
-    throw err;
+    throw unauthorized('User not found');
   }
 
-  return sanitizeUser(user);
+  return safeUser(user);
 };

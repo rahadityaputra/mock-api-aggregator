@@ -1,60 +1,42 @@
-import * as authService from '../services/authService.js';
-import { sendSuccess, sendCreated, sendError } from '../utils/responses.js';
+import { getAuthenticatedUser, loginUser, registerUser } from '../services/authService.js';
 
-/**
- * POST /api/auth/register
- * Register a new user account.
- *
- * Body: { email, username, password, name? }
- */
 export const register = async (req, res, next) => {
   try {
-    const { email, username, password, name } = req.body;
+    const result = await registerUser(req.validatedBody);
 
-    if (!email || !username || !password) {
-      return sendError(res, 'email, username, dan password wajib diisi', 400);
-    }
-
-    const { user, token } = await authService.registerUser({ email, username, password, name });
-
-    return sendCreated(res, { user, token }, 'Akun berhasil dibuat');
-  } catch (err) {
-    next(err);
+    return res.status(201).json({
+      success: true,
+      token: result.token,
+      user: result.user,
+    });
+  } catch (error) {
+    next(error);
   }
 };
 
-/**
- * POST /api/auth/login
- * Authenticate with email + password.
- *
- * Body: { email, password }
- */
 export const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const result = await loginUser(req.validatedBody);
 
-    if (!email || !password) {
-      return sendError(res, 'email dan password wajib diisi', 400);
-    }
-
-    const { user, token } = await authService.loginUser(email, password);
-
-    return sendSuccess(res, { user, token }, 'Login berhasil');
-  } catch (err) {
-    next(err);
+    return res.status(200).json({
+      success: true,
+      token: result.token,
+      user: result.user,
+    });
+  } catch (error) {
+    next(error);
   }
 };
 
-/**
- * GET /api/auth/me
- * Get the currently authenticated user's profile.
- * Requires: authenticate middleware
- */
 export const getMe = async (req, res, next) => {
   try {
-    const user = authService.getCurrentUser(req.user.id);
-    return sendSuccess(res, { user }, 'Profile berhasil diambil');
-  } catch (err) {
-    next(err);
+    const user = await getAuthenticatedUser(req.user.id);
+
+    return res.status(200).json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    next(error);
   }
 };

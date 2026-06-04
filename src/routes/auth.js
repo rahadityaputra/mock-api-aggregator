@@ -1,16 +1,14 @@
 import { Router } from 'express';
+
 import { register, login, getMe } from '../controllers/authController.js';
-import { authenticate } from '../middleware/authentication.js';
+import { authenticate } from '../middlewares/authentication.js';
+import { validateRequest } from '../middlewares/validation.js';
+import { validateLoginPayload, validateRegisterPayload } from '../validators/index.js';
 
 const router = Router();
 
-// POST /api/auth/register
-router.post('/register', register);
-
-// POST /api/auth/login
-router.post('/login', login);
-
-// GET  /api/auth/me
+router.post('/register', validateRequest(validateRegisterPayload), register);
+router.post('/login', validateRequest(validateLoginPayload), login);
 router.get('/me', authenticate, getMe);
 
 export default router;
